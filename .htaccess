@@ -1,0 +1,9 @@
+# For Apache hosts where this repository folder is the web root (shared PHP
+# hosting, or an XAMPP virtual host). /api/* goes to the PHP API; every other
+# path is served from frontend/, so source files and .env are never exposed.
+Options -Indexes
+DirectoryIndex index.html
+RewriteEngine On
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+RewriteRule ^api(/.*)?$ backend/public/index.php [QSA,END]
+RewriteRule ^(.*)$ frontend/$1 [END]

@@ -1,0 +1,15 @@
+# Local secrets
+backend/.env
+
+# Vercel CLI
+.vercel/
+frontend/.vercel/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Personal documents kept next to the code
+*.docx

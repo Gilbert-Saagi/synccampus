@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "outputDirectory": ".",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://synccampus-api.onrender.com/api/:path*" }
+  ],
+  "redirects": [
+    { "source": "/staff.html", "destination": "/staff/", "permanent": true },
+    { "source": "/workspace.html", "destination": "/staff/workspace.html", "permanent": true }
+  ],
+  "headers": [
+    {
+      "source": "/staff/(.*)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    }
+  ]
+}
