@@ -55,3 +55,17 @@ $("#trackForm").addEventListener("submit", (e) => {
   creds = { reference: f.get("reference").trim(), access_code: f.get("access_code").trim() };
   showConcern();
 });
+
+// Offer references submitted from this device; the student still types the access code.
+const recent = recentReferences();
+if (recent.length) {
+  $("#trackForm").insertAdjacentHTML("afterbegin",
+    `<p class="muted small">Submitted on this device: ${recent.map((r) => `<a href="#" class="more" data-ref="${esc(r)}">${esc(r)}</a>`).join(", ")}</p>`);
+  $$("[data-ref]").forEach((a) => {
+    a.onclick = (e) => {
+      e.preventDefault();
+      $("#trackForm [name=reference]").value = a.dataset.ref;
+      $("#trackForm [name=access_code]").focus();
+    };
+  });
+}

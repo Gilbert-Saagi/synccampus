@@ -72,6 +72,15 @@ function renderChrome(active) {
   }
 }
 
+// References of concerns submitted from this browser. Access codes are never stored.
+const RECENT_KEY = "saagi_recent_refs";
+function recentReferences() {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch { return []; }
+}
+function rememberReference(reference) {
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify([reference, ...recentReferences().filter((r) => r !== reference)].slice(0, 5))); } catch {}
+}
+
 /** Cabinet member card, used on the home page and the cabinet page. */
 function personCard(person, { details = false } = {}) {
   const position = person.position.toLowerCase();

@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS staff_invitations (
     id SERIAL PRIMARY KEY,
     token_hash VARCHAR(64) NOT NULL UNIQUE,
     role VARCHAR(20) NOT NULL,
+    invitee_name VARCHAR(120) NOT NULL DEFAULT '',
     invitee_email VARCHAR(160),
     portfolio VARCHAR(120) NOT NULL DEFAULT '',
     categories_handled VARCHAR(300) NOT NULL DEFAULT '',

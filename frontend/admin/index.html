@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin – Saagi SyncCampus</title><meta name="theme-color" content="#44363A">
+<link rel="icon" href="/assets/icons/icon.svg"><link rel="stylesheet" href="/css/app.css">
+</head><body>
+<header class="top admin">
+  <a class="brand" href="/admin/"><span class="logo"><img src="/assets/logo.png" alt="ISBAT University"></span>
+    <span><b>Saagi SyncCampus</b><small>System administration</small></span></a>
+  <nav>
+    <span id="who" class="who hide"></span>
+    <button class="link hide" id="logout">Sign out</button>
+  </nav>
+</header>
+<main>
+  <section id="loginBox" class="card narrow">
+    <h2>Admin sign in</h2>
+    <p class="sub">For the system administrator only. Guild cabinet members use the <a class="more" href="/staff/">staff sign-in</a>.</p>
+    <form id="loginForm">
+      <label>Email</label><input name="email" type="email" required autocomplete="username">
+      <label>Password</label><input name="password" type="password" required autocomplete="current-password">
+      <button class="btn" type="submit">Sign in</button>
+      <div class="err" id="loginErr"></div>
+    </form>
+  </section>
+  <div id="app" class="hide"></div>
+</main>
+<script src="/js/common.js"></script><script src="/js/portal.js"></script><script src="/js/admin.js"></script>
+</body></html>

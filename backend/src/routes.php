@@ -38,6 +38,12 @@ $router->post('/staff/invitations', [AuthController::class, 'createInvitation'])
 $router->post('/staff/invitations/inspect', [AuthController::class, 'inspectInvitation']);
 $router->post('/staff/invitations/redeem', [AuthController::class, 'redeemInvitation']);
 
+// System admin (accounts only, never concerns)
+$router->get('/admin/staff', [AdminController::class, 'staff']);
+$router->patch('/admin/staff/{id}', [AdminController::class, 'updateStaff']);
+$router->get('/admin/invitations', [AdminController::class, 'invitations']);
+$router->post('/admin/invitations/{id}/revoke', [AdminController::class, 'revokeInvitation']);
+
 // Guild President and Vice
 $router->get('/leader/queue', [LeaderController::class, 'queue']);
 $router->get('/leader/concerns/{id}', [LeaderController::class, 'concern']);

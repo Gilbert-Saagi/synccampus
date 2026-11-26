@@ -1,12 +1,12 @@
 // Offline shell: static files come from the network first and fall back to the
 // cache when offline. API calls are never cached.
-const CACHE = "saagi-shell-v9";
+const CACHE = "saagi-shell-v10";
 const SHELL = [
   "/", "/index.html", "/submit.html", "/track.html", "/feed.html", "/cabinet.html", "/community.html", "/privacy.html",
-  "/staff/", "/staff/workspace.html",
+  "/staff/", "/staff/workspace.html", "/admin/",
   "/css/app.css",
   "/js/common.js", "/js/home.js", "/js/submit.js", "/js/track.js", "/js/feed.js", "/js/cabinet.js", "/js/community.js",
-  "/js/staff.js", "/js/workspace.js",
+  "/js/portal.js", "/js/staff.js", "/js/workspace.js", "/js/admin.js",
   "/data/cabinet.json", "/manifest.json",
   "/assets/logo.png", "/assets/icons/icon.svg", "/assets/icons/icon-192.png", "/assets/icons/icon-512.png",
 ];

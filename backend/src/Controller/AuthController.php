@@ -107,6 +107,7 @@ final class AuthController
             'token_hash' => Codes::hashInvitationToken($token),
             'role' => $role,
             'invitee_email' => $email,
+            'invitee_name' => $in->text('invitee_name', 'Name', 0, 120),
             'portfolio' => $portfolio,
             'categories_handled' => $in->text('categories_handled', 'Categories', 0, 300),
             'max_open_load' => $in->int('max_open_load', 'Maximum open assignments', 5, 1, 50),
@@ -135,6 +136,7 @@ final class AuthController
         return [
             'role' => $invitation['role'],
             'portfolio' => $invitation['portfolio'],
+            'invitee_name' => $invitation['invitee_name'] ?? '',
             'invitee_email' => $invitation['invitee_email'],
             'expires_at' => Time::iso($invitation['expires_at']),
         ];

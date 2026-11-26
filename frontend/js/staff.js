@@ -1,238 +1,22 @@
-// Staff dashboard. The same page serves three roles:
-//   admin       – sets up the first Guild leader accounts, nothing else
-//   president / vice_guild – priority queue, assignment, analytics, handover
-//   delegate    – the concerns assigned to them
+// Guild cabinet dashboard (/staff/).
+//   president / vice_guild – priority queue, assignment, analytics, handover, invitations
+//   delegate (ministers, GRCs, speaker, secretary) – the concerns assigned to them
+// The system admin has a separate area at /admin/.
 
-const TOKEN_KEY = "saagi_token";
-const ROLE_LABELS = { admin: "System admin", president: "Guild President", vice_guild: "Guild Vice President", delegate: "Minister / GRC Delegate" };
-const inviteToken = new URLSearchParams(location.hash.slice(1)).get("invite");
-
-let token = sessionStorage.getItem(TOKEN_KEY);
-let me = null;
 let workload = [];
-let installPrompt = null;
 
-const call = (path, options = {}) => api(path, { ...options, token });
-
-/* ---------- session ---------- */
-
-$("#loginForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  $("#loginErr").textContent = "";
-  const f = new FormData(e.target);
-  try {
-    const session = await api("/auth/login", { method: "POST", form: { username: f.get("email"), password: f.get("password") } });
-    signIn(session.access_token);
-  } catch (error) {
-    $("#loginErr").textContent = error.message;
-  }
-});
-
-$("#logout").onclick = () => {
-  sessionStorage.removeItem(TOKEN_KEY);
-  location.replace("/staff/");
-};
-
-function signIn(newToken) {
-  token = newToken;
-  sessionStorage.setItem(TOKEN_KEY, token);
-  start();
-}
-
-async function start() {
-  try {
-    me = await call("/auth/me");
-  } catch {
-    sessionStorage.removeItem(TOKEN_KEY);
-    return;
-  }
-  $("#loginBox").classList.add("hide");
-  $("#invitationBox").classList.add("hide");
-  $("#app").classList.remove("hide");
-  $("#who").textContent = `${me.name} · ${ROLE_LABELS[me.role] || me.role}`;
-  $("#who").classList.remove("hide");
-  $("#logout").classList.remove("hide");
-  $("#workspaceLink").classList.toggle("hide", me.role === "admin");
-
-  try {
-    if (me.role === "admin") adminView();
-    else if (me.role === "delegate") await delegateView();
-    else await leaderView();
-  } catch (error) {
-    $("#app").innerHTML = `<div class="card"><p class="err">${esc(error.message)}</p></div>`;
-  }
-}
-
-/* ---------- installing the app on a phone ---------- */
-
-window.addEventListener("beforeinstallprompt", (event) => {
-  event.preventDefault();
-  installPrompt = event;
-});
-
-document.addEventListener("click", async (event) => {
-  if (event.target.id !== "installApp") return;
-  if (!installPrompt) {
-    event.target.insertAdjacentHTML("afterend", '<p class="muted small">Open your browser menu and choose "Install app" or "Add to Home screen".</p>');
-    event.target.remove();
-    return;
-  }
-  installPrompt.prompt();
-  await installPrompt.userChoice;
-  installPrompt = null;
-});
-
-/* ---------- invitations ---------- */
-
-function invitePanel() {
-  const allowed = { admin: ["president", "vice_guild", "delegate"], president: ["vice_guild", "delegate"], vice_guild: ["delegate"] }[me.role] || [];
-  const options = allowed.map((role) => `<option value="${role}">${ROLE_LABELS[role]}</option>`).join("");
-  return `<div class="card"><h2>Invite staff</h2>
-    <p class="sub">Creates a one-use sign-up link that expires in 7 days. Copy it and send it to the person directly. Binding it to their email is optional.</p>
-    <form id="inviteForm">
-      <div class="row">
-        <div><label>Account role</label><select id="inviteRole" name="role">${options}</select></div>
-        <div><label>Invitee email (optional)</label><input name="invitee_email" type="email" maxlength="160" placeholder="name@isbatuniversity.ac.ug"></div>
-      </div>
-      <label>Portfolio / position</label><input name="portfolio" id="invitePortfolio" maxlength="120" placeholder="e.g. Minister of ICT, or GRC – Block B">
-      <label>Categories this person handles (comma separated)</label><input name="categories_handled" maxlength="300" placeholder="e.g. ICT / Internet, Registration">
-      <div class="row">
-        <div><label>Maximum open assignments</label><input name="max_open_load" type="number" min="1" max="50" value="5"></div>
-        <div><label>Campus covered</label><select name="campus"><option value="">Both campuses</option><option>Main Campus</option><option>City Campus</option></select></div>
-      </div>
-      <button class="btn" type="submit">Create invitation link</button>
-      <div class="err" id="inviteErr"></div>
-    </form>
-    <div id="inviteResult"></div>
-    <p class="muted small">Staff can also install this site as an app on their phone.</p>
-    <button class="btn alt sm" id="installApp" type="button">Install app</button>
-  </div>`;
-}
-
-function bindInviteForm() {
-  const form = $("#inviteForm");
-  const role = $("#inviteRole");
-  const portfolio = $("#invitePortfolio");
-  const presetPortfolio = () => {
-    if (role.value === "president") portfolio.value = "Guild President";
-    else if (role.value === "vice_guild") portfolio.value = "Guild Vice President";
-    else if (["Guild President", "Guild Vice President"].includes(portfolio.value)) portfolio.value = "";
-  };
-  role.addEventListener("change", presetPortfolio);
-  presetPortfolio();
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    $("#inviteErr").textContent = "";
-    const f = new FormData(form);
-    try {
-      const invitation = await call("/staff/invitations", { method: "POST", body: {
-        role: f.get("role"),
-        invitee_email: f.get("invitee_email") || null,
-        portfolio: f.get("portfolio"),
-        categories_handled: f.get("categories_handled"),
-        max_open_load: Number(f.get("max_open_load")) || 5,
-        campus: f.get("campus"),
-      } });
-      const link = `${location.origin}/staff/#invite=${encodeURIComponent(invitation.token)}`;
-      $("#inviteResult").innerHTML = `<div class="notice">
-          <b>${esc(ROLE_LABELS[invitation.role])} invitation created.</b> The link works once and expires ${fmtDate(invitation.expires_at)}.
-          <input id="inviteLink" readonly value="${esc(link)}" aria-label="Invitation link">
-          <button class="btn sm alt" id="copyInvite" type="button">Copy link</button> <span class="ok" id="copyStatus"></span>
-        </div>`;
-      $("#copyInvite").onclick = async () => {
-        try {
-          await navigator.clipboard.writeText(link);
-          $("#copyStatus").textContent = "Copied";
-        } catch {
-          $("#inviteLink").select();
-          $("#copyStatus").textContent = "Select the link and copy it";
-        }
-      };
-      form.reset();
-      presetPortfolio();
-    } catch (error) {
-      $("#inviteErr").textContent = error.message;
-    }
-  });
-}
-
-async function showInvitation() {
-  $("#loginBox").classList.add("hide");
-  const box = $("#invitationBox");
-  box.classList.remove("hide");
-  box.innerHTML = "<h2>Checking invitation…</h2>";
-
-  let info;
-  try {
-    info = await api("/staff/invitations/inspect", { method: "POST", body: { token: inviteToken } });
-  } catch (error) {
-    box.innerHTML = `<h2>Invitation unavailable</h2><p class="err">${esc(error.message)}</p><p class="sub">Ask the Guild President or Vice for a new link.</p>`;
-    return;
-  }
-
-  box.innerHTML = `<h2>Create your ${esc(ROLE_LABELS[info.role] || "staff")} account</h2>
-    <p class="sub">Position: ${esc(info.portfolio)} · Link expires ${new Date(info.expires_at).toLocaleDateString()}</p>
-    <form id="registerForm">
-      <label>Full name</label><input name="full_name" required minlength="2" maxlength="120" autocomplete="name">
-      <label>Email</label><input name="email" type="email" required maxlength="160" autocomplete="email" value="${esc(info.invitee_email || "")}"${info.invitee_email ? " readonly" : ""}>
-      <label>Password (at least 12 characters)</label><input name="password" type="password" required minlength="12" maxlength="128" autocomplete="new-password">
-      <label>Confirm password</label><input name="confirm_password" type="password" required minlength="12" maxlength="128" autocomplete="new-password">
-      <button class="btn" type="submit">Create account</button>
-      <div class="err" id="registerErr"></div>
-    </form>`;
-
-  $("#registerForm").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    $("#registerErr").textContent = "";
-    const f = new FormData(event.target);
-    if (f.get("password") !== f.get("confirm_password")) {
-      $("#registerErr").textContent = "Passwords do not match";
+initPortal({
+  home: "/staff/",
+  render: async (account) => {
+    if (account.role === "admin") {
+      wrongPortal("This is the system admin account. Admins manage accounts at the admin page.", "/admin/", "Go to the admin page");
       return;
     }
-    try {
-      const session = await api("/staff/invitations/redeem", { method: "POST", body: {
-        token: inviteToken, full_name: f.get("full_name"), email: f.get("email"), password: f.get("password"),
-      } });
-      history.replaceState(null, "", location.pathname);
-      signIn(session.access_token);
-    } catch (error) {
-      $("#registerErr").textContent = error.message;
-    }
-  });
-}
-
-/* ---------- admin ---------- */
-
-function adminView() {
-  $("#app").innerHTML = `
-    <div class="card"><h1>Account setup</h1>
-      <p class="sub">Create sign-up links for the Guild President and Vice. They then invite ministers and GRC delegates themselves.
-      For privacy, this account cannot open student concerns.</p></div>
-    ${invitePanel()}
-    <div class="card"><h2>Change your password</h2><p class="sub">Change the initial password before sending any invitations.</p>
-      <form id="passwordForm">
-        <label>Current password</label><input type="password" name="current_password" required autocomplete="current-password">
-        <label>New password (at least 12 characters)</label><input type="password" name="new_password" required minlength="12" maxlength="128" autocomplete="new-password">
-        <button class="btn alt" type="submit">Change password</button> <span id="passwordResult"></span>
-      </form></div>`;
-  bindInviteForm();
-
-  $("#passwordForm").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const f = new FormData(event.target);
-    const out = $("#passwordResult");
-    try {
-      await call("/auth/change-password", { method: "POST", body: { current_password: f.get("current_password"), new_password: f.get("new_password") } });
-      out.className = "ok";
-      out.textContent = "Password changed.";
-      event.target.reset();
-    } catch (error) {
-      out.className = "err";
-      out.textContent = error.message;
-    }
-  });
-}
+    $("#workspaceLink").classList.remove("hide");
+    if (account.role === "delegate") await delegateView();
+    else await leaderView();
+  },
+});
 
 /* ---------- Guild President / Vice ---------- */
 
@@ -287,7 +71,8 @@ async function leaderView() {
       ${handovers.length ? `<h3>Saved records</h3>${handovers.map(handoverSummary).join("")}` : ""}
     </div>
 
-    ${invitePanel()}`;
+    ${invitePanel()}
+    ${accountCard()}`;
 
   $$("[data-ack]").forEach((b) => (b.onclick = async () => {
     await call(`/leader/escalations/${b.dataset.ack}/acknowledge`, { method: "POST" });
@@ -307,6 +92,7 @@ async function leaderView() {
   $$("[data-assign]").forEach((b) => (b.onclick = () => assign(b.dataset.assign, $("#sel" + b.dataset.assign).value)));
   $$("details[data-explain]").forEach((d) => d.addEventListener("toggle", () => d.open && explain(d), { once: true }));
   bindInviteForm();
+  bindAccountCard();
 }
 
 function queueRow(c) {
@@ -431,7 +217,8 @@ async function delegateView() {
     <div class="card"><h2>My assigned concerns</h2>
       <p class="sub">Highest priority first. Replies to the student appear on their tracking page; internal notes stay within the Guild.
       Mark a concern resolved when it is fixed – the student then confirms or reopens it.</p></div>` +
-    (rows.map(delegateCard).join("") || '<div class="card muted">Nothing is assigned to you right now.</div>');
+    (rows.map(delegateCard).join("") || '<div class="card muted">Nothing is assigned to you right now.</div>') + accountCard();
+  bindAccountCard();
 
   $("#available").onchange = (e) => call("/delegate/availability", { method: "POST", body: { available: e.target.checked } });
   $$("[data-send]").forEach((button) => {
@@ -469,7 +256,3 @@ function delegateCard(c) {
   </div>`;
 }
 
-/* ---------- start ---------- */
-
-if (inviteToken) showInvitation();
-else if (token) start();

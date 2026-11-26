@@ -105,3 +105,4 @@ h2.section{color:var(--navy);font-size:18px;margin:8px 0 10px}
 #inviteLink{margin:8px 0}
 textarea+.btn,textarea+.row{margin-top:8px}
 .cal-day{margin-bottom:10px}
+header.top.admin{background:var(--slate)}

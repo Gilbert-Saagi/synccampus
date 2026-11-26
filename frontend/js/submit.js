@@ -77,6 +77,7 @@ $("#submitForm").addEventListener("submit", async (e) => {
       financial_impact: f.get("financial_impact") === "on",
       is_public: f.get("is_public") === "on",
     } });
+    rememberReference(receipt.reference);
     showReceipt(e.target, receipt);
   } catch (error) {
     $("#submitErr").textContent = error.message;

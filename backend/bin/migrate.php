@@ -32,6 +32,7 @@ $added = [
     ['concerns', 'satisfaction_rating', 'INTEGER NULL'],
     ['delegates', 'campus', "VARCHAR(60) NOT NULL DEFAULT ''"],
     ['staff_invitations', 'campus', "VARCHAR(60) NOT NULL DEFAULT ''"],
+    ['staff_invitations', 'invitee_name', "VARCHAR(120) NOT NULL DEFAULT ''"],
     ['assignments', 'seen_at', "$timestamp NULL"],
 ];
 $schema = Db::isPostgres() ? 'current_schema()' : 'DATABASE()';
