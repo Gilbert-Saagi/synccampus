@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use SyncCampus\Controller\AdminController;
 use SyncCampus\Controller\AuthController;
 use SyncCampus\Controller\CommunityController;
 use SyncCampus\Controller\DelegateController;

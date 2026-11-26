@@ -11,12 +11,24 @@ Final year project by Atwijukire Gilbert (DSE), supervised by Kakooza Tobius.
 
 Live site: https://synccampus-frontend.vercel.app
 
+## Three ways in
+
+| Who | Address | How they get in |
+| --- | --- | --- |
+| Students | `/` (the public site) | No account. They submit a concern and track it with the reference and private access code they are given. |
+| Guild cabinet (President, Vice, Speaker, ministers, GRCs) | `/staff/` | Their own email and password, after a one-use sign-up link from the admin or the Guild President. |
+| System admin | `/admin/` | The account created from `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD`. |
+
+The public site never links to `/staff/` or `/admin/`, and search engines are told not to index them.
+Signing in at the wrong one shows a pointer to the right one.
+
 ## Stack
 
 - **Frontend:** plain HTML, CSS and JavaScript, installable as a Progressive Web App. No build step.
-- **Backend:** PHP 8.1+ JSON API with no framework, using PDO.
-- **Database:** MySQL 8 / MariaDB (XAMPP) or PostgreSQL (Neon). The same code runs on both.
-- **Hosting:** Vercel serves the frontend and forwards `/api` to the PHP API, which runs on Render.
+- **Backend:** PHP 8.1+ JSON API with no framework, using PDO, packaged as a Docker image for Render.
+- **Database:** PostgreSQL on Neon in production. The same code also runs on MySQL, so it can be
+  demonstrated on XAMPP.
+- **Hosting:** Vercel serves the frontend and forwards `/api` to the PHP API on Render.
 
 ## Project layout
 
@@ -89,11 +101,22 @@ This checks the priority, similarity, recommendation and escalation rules. It ne
 - **Students** need no account. Their concern is reopened with the reference plus access code, and only a keyed hash of the code is stored. Five wrong codes lock that reference for a minute.
 - **The Guild President and Vice** see the full queue, assign concerns, and see analytics and handover records.
 - **Ministers and GRC delegates** see only the concerns assigned to them.
-- **The system admin** creates the first leader invitations and cannot open concerns.
+- **The system admin** sets up and maintains the cabinet's accounts: invites members straight from the cabinet list, edits portfolios and areas, switches off the accounts of people who leave, and cancels links. The admin cannot open concerns.
 - Sensitive categories (harassment, discrimination) are always private and never appear in public statistics.
 - Every staff view and change is written to `audit_log`.
 
-Staff accounts are created only through one-use invitation links (admin → President/Vice → ministers).
-The public site has no link to the staff area. Staff bookmark `/staff/` directly.
+Staff accounts are created only through one-use invitation links (admin → whole cabinet, President →
+Vice and ministers, Vice → ministers). Nobody can register without one.
+
+## Running the API in Docker
+
+The image Render builds can also be run locally:
+
+```
+docker build -t synccampus-api backend
+docker run -p 8080:8080 -e DATABASE_URL="postgres://..." -e SECRET_KEY=... -e ACCESS_CODE_PEPPER=... synccampus-api
+```
+
+Then `http://localhost:8080/api/health` should return `{"status":"ok"}`.
 
 Deployment steps are in [DEPLOYMENT.md](DEPLOYMENT.md).

@@ -60,12 +60,17 @@ Old staff links (`/staff.html`, `/workspace.html`) redirect to the new `/staff/`
 
 ## 4. First sign-in
 
-1. Go to `https://synccampus-frontend.vercel.app/staff/` and sign in with the bootstrap admin account.
-2. Change the admin password, then create invitation links for the Guild President and Vice.
-3. They open their links, create their accounts, and invite ministers and GRC delegates, setting
-   each person's portfolio and the categories they handle (these drive the recommendations).
+1. Go to `https://synccampus-frontend.vercel.app/admin/` and sign in with the bootstrap admin account.
+2. Change the admin password under **My account**.
+3. In **Guild cabinet**, press **Prepare invite** next to each member, starting with the President
+   and Vice. The form fills in their name, role, position, suggested categories and campus. Check
+   the categories, since they drive the delegate recommendations, then create the link and send it
+   with **Send on WhatsApp** or **Copy link**.
+4. Each member opens their link, sets an email and password, and from then on signs in at
+   `https://synccampus-frontend.vercel.app/staff/`.
 
-The public site does not link to `/staff/`. Share that address with the cabinet directly.
+The public site does not link to `/staff/` or `/admin/`. Share `/staff/` with the cabinet directly
+and keep `/admin/` to yourself.
 
 ## Escalation checks
 
