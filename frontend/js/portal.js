@@ -1,38 +1,71 @@
 // Shared by the two signed-in areas: /staff/ (Guild cabinet) and /admin/ (system admin).
-// Handles sign-in, sign-out, invitation links, password changes and installing the app.
+// Handles sign-in by emailed link, sign-out, devices, invitation links and installing the app.
+//
+// Nobody has a password. A person enters their email, receives a one-time link, and the
+// link only works in this browser: it is tied to a random device key kept in localStorage.
 
-const TOKEN_KEY = "saagi_token";
 const ROLE_LABELS = { admin: "System admin", president: "Guild President", vice_guild: "Guild Vice President", delegate: "Minister / GRC" };
 const INVITABLE = { admin: ["president", "vice_guild", "delegate"] };
-const inviteToken = new URLSearchParams(location.hash.slice(1)).get("invite");
+const hashParams = new URLSearchParams(location.hash.slice(1));
+const inviteToken = hashParams.get("invite");
 
-let token = sessionStorage.getItem(TOKEN_KEY);
+let tokenKey = "saagi_token_staff";
+let token = null;
 let me = null;
 let installPrompt = null;
 
 const call = (path, options = {}) => api(path, { ...options, token });
 
+const store = {
+  get: (key) => { try { return localStorage.getItem(key); } catch { return null; } },
+  set: (key, value) => { try { localStorage.setItem(key, value); } catch {} },
+  remove: (key) => { try { localStorage.removeItem(key); } catch {} },
+};
+
+/** A random key that stays in this browser; sign-in links only work where it matches. */
+function deviceKey() {
+  const KEY = "saagi_device";
+  let value = store.get(KEY);
+  if (!value) {
+    value = [...crypto.getRandomValues(new Uint8Array(32))].map((b) => b.toString(16).padStart(2, "0")).join("");
+    store.set(KEY, value);
+  }
+  return value;
+}
+
 /**
- * Wires up the page. `render(me)` draws the signed-in view; `home` is where
- * sign-out returns to. The admin page brings its own sign-in form, so it
- * passes `passwordLogin: false` and calls the returned `signIn` itself.
+ * Wires up the page. `portal` is "staff" or "admin"; `render(me)` draws the
+ * signed-in view; `home` is where sign-out returns to.
  */
-function initPortal({ home, render, passwordLogin = true }) {
-  if (passwordLogin) $("#loginForm").addEventListener("submit", async (e) => {
+function initPortal({ portal, home, render }) {
+  tokenKey = "saagi_token_" + portal;
+  token = store.get(tokenKey);
+
+  $("#linkForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     $("#loginErr").textContent = "";
-    const f = new FormData(e.target);
+    const button = e.target.querySelector("button");
+    button.disabled = true;
     try {
-      const session = await api("/auth/login", { method: "POST", form: { username: f.get("email"), password: f.get("password") } });
-      signIn(session.access_token);
+      const result = await api("/auth/sign-in-link", { method: "POST", body: { portal, email: new FormData(e.target).get("email"), device: deviceKey() } });
+      e.target.classList.add("hide");
+      $("#linkSent").innerHTML = `<div class="notice"><b>Check your email.</b> ${esc(result.message)}
+          ${result.dev_link ? `<p class="small">Development server – no email is sent. <a class="more" href="${esc(result.dev_link)}">Open the sign-in link</a></p>` : ""}
+          <p><button class="btn sm alt" id="again" type="button">Use a different address</button></p></div>`;
+      $("#again").onclick = () => {
+        $("#linkSent").innerHTML = "";
+        e.target.classList.remove("hide");
+      };
     } catch (error) {
       $("#loginErr").textContent = error.message;
+    } finally {
+      button.disabled = false;
     }
   });
 
   $("#logout").onclick = async () => {
     await call("/auth/logout", { method: "POST" }).catch(() => {});
-    sessionStorage.removeItem(TOKEN_KEY);
+    store.remove(tokenKey);
     location.replace(home);
   };
 
@@ -40,7 +73,8 @@ function initPortal({ home, render, passwordLogin = true }) {
     try {
       me = await call("/auth/me");
     } catch {
-      sessionStorage.removeItem(TOKEN_KEY);
+      store.remove(tokenKey);
+      token = null;
       return;
     }
     $("#loginBox").classList.add("hide");
@@ -58,13 +92,28 @@ function initPortal({ home, render, passwordLogin = true }) {
 
   function signIn(newToken) {
     token = newToken;
-    sessionStorage.setItem(TOKEN_KEY, token);
+    store.set(tokenKey, token);
     start();
   }
 
-  if (inviteToken && $("#invitationBox")) showInvitation(signIn);
+  async function confirmLink(linkToken) {
+    history.replaceState(null, "", location.pathname);
+    $("#linkForm").classList.add("hide");
+    $("#linkSent").innerHTML = '<p class="muted">Signing you in…</p>';
+    try {
+      const session = await api("/auth/sign-in-link/confirm", { method: "POST", body: { token: linkToken, device: deviceKey() } });
+      $("#linkSent").innerHTML = "";
+      signIn(session.access_token);
+    } catch (error) {
+      $("#linkSent").innerHTML = `<p class="err">${esc(error.message)}</p>`;
+      $("#linkForm").classList.remove("hide");
+    }
+  }
+
+  const linkToken = hashParams.get("login");
+  if (linkToken) confirmLink(linkToken);
+  else if (inviteToken && $("#invitationBox")) showInvitation(signIn);
   else if (token) start();
-  return { signIn };
 }
 
 // Pasting a sign-up or sign-in link into a tab that already shows this page only
@@ -160,7 +209,7 @@ function bindInviteForm(onCreated) {
       const who = f.get("invitee_name") || ROLE_LABELS[invitation.role];
       const message = `Hello ${f.get("invitee_name") || ""}, here is your SyncCampus sign-up link for ${invitation.portfolio}. It works once and expires in 7 days: ${link}`;
       $("#inviteResult").innerHTML = `<div class="notice">
-          <b>Invitation for ${esc(who)} created.</b> It works once and expires ${fmtDate(invitation.expires_at)}.
+          <b>Invitation for ${esc(who)} created.</b> ${invitation.emailed ? `It has been emailed to ${esc(invitation.invitee_email)}. ` : ""}It works once and expires ${fmtDate(invitation.expires_at)}.
           <input id="inviteLink" readonly value="${esc(link)}" aria-label="Invitation link">
           <div class="actions"><button class="btn sm alt" id="copyInvite" type="button">Copy link</button>
           <a class="btn sm alt" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(message)}">Send on WhatsApp</a>
@@ -201,9 +250,8 @@ async function showInvitation(signIn) {
     <p class="sub">Create your SyncCampus account for <b>${esc(info.portfolio)}</b>. This link expires ${new Date(info.expires_at).toLocaleDateString()}.</p>
     <form id="registerForm">
       <label>Full name</label><input name="full_name" required minlength="2" maxlength="120" autocomplete="name" value="${esc(info.invitee_name || "")}">
-      <label>Email (you will sign in with this)</label><input name="email" type="email" required maxlength="160" autocomplete="email" value="${esc(info.invitee_email || "")}"${info.invitee_email ? " readonly" : ""}>
-      <label>Password (at least 12 characters)</label><input name="password" type="password" required minlength="12" maxlength="128" autocomplete="new-password">
-      <label>Confirm password</label><input name="confirm_password" type="password" required minlength="12" maxlength="128" autocomplete="new-password">
+      <label>Email</label><input name="email" type="email" required maxlength="160" autocomplete="email" value="${esc(info.invitee_email || "")}"${info.invitee_email ? " readonly" : ""}>
+      <p class="muted small">There is no password. Whenever you want to sign in, we email a link to this address that only works on the device you asked from.</p>
       <button class="btn" type="submit">Create account</button>
       <div class="err" id="registerErr"></div>
     </form>`;
@@ -212,13 +260,9 @@ async function showInvitation(signIn) {
     event.preventDefault();
     $("#registerErr").textContent = "";
     const f = new FormData(event.target);
-    if (f.get("password") !== f.get("confirm_password")) {
-      $("#registerErr").textContent = "Passwords do not match";
-      return;
-    }
     try {
       const session = await api("/staff/invitations/redeem", { method: "POST", body: {
-        token: inviteToken, full_name: f.get("full_name"), email: f.get("email"), password: f.get("password"),
+        token: inviteToken, full_name: f.get("full_name"), email: f.get("email"),
       } });
       history.replaceState(null, "", location.pathname);
       signIn(session.access_token);
@@ -228,21 +272,11 @@ async function showInvitation(signIn) {
   });
 }
 
-/* ---------- account settings ---------- */
+/* ---------- account and devices ---------- */
 
-function accountCard({ password = true } = {}) {
-  const passwordForm = password
-    ? `<form id="passwordForm">
-      <div class="row">
-        <div><label>Current password</label><input type="password" name="current_password" required autocomplete="current-password"></div>
-        <div><label>New password (at least 12 characters)</label><input type="password" name="new_password" required minlength="12" maxlength="128" autocomplete="new-password"></div>
-      </div>
-      <button class="btn alt" type="submit">Change password</button> <span id="passwordResult"></span>
-      <p class="muted small">Changing your password signs you out on every other device.</p>
-    </form>`
-    : "";
+function accountCard() {
   return `<div class="card"><h2>My account</h2>
-    ${passwordForm}
+    <p class="sub">You sign in with a link emailed to <b>${esc(me.email || "your address")}</b>. Each device you sign in on is listed here; sign out any you no longer use or do not recognise.</p>
     <h3>Signed-in devices</h3>
     <div id="devices"><p class="muted">Loading…</p></div>
     <p class="muted small">You can install SyncCampus on your phone like an app.</p>
@@ -278,21 +312,4 @@ async function renderDevices() {
 
 function bindAccountCard() {
   renderDevices();
-  const form = $("#passwordForm");
-  if (!form) return;
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const f = new FormData(form);
-    const out = $("#passwordResult");
-    try {
-      await call("/auth/change-password", { method: "POST", body: { current_password: f.get("current_password"), new_password: f.get("new_password") } });
-      out.className = "ok";
-      out.textContent = "Password changed. Other devices have been signed out.";
-      form.reset();
-      renderDevices();
-    } catch (error) {
-      out.className = "err";
-      out.textContent = error.message;
-    }
-  });
 }

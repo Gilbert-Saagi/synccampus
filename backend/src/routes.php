@@ -33,15 +33,13 @@ $router->post('/suggestions/track', [CommunityController::class, 'trackSuggestio
 $router->post('/suggestions/track/reply', [CommunityController::class, 'replyToSuggestion']);
 
 // Staff accounts
-$router->post('/auth/login', [AuthController::class, 'login']);
 $router->get('/auth/me', [AuthController::class, 'me']);
 $router->post('/auth/logout', [AuthController::class, 'logout']);
 $router->get('/auth/sessions', [AuthController::class, 'sessions']);
 $router->post('/auth/sessions/{id}/revoke', [AuthController::class, 'revokeSession']);
 $router->post('/auth/sessions/revoke-others', [AuthController::class, 'revokeOtherSessions']);
-$router->post('/auth/admin-link', [AuthController::class, 'requestAdminLink']);
-$router->post('/auth/admin-link/confirm', [AuthController::class, 'confirmAdminLink']);
-$router->post('/auth/change-password', [AuthController::class, 'changePassword']);
+$router->post('/auth/sign-in-link', [AuthController::class, 'requestLink']);
+$router->post('/auth/sign-in-link/confirm', [AuthController::class, 'confirmLink']);
 $router->post('/staff/invitations', [AuthController::class, 'createInvitation']);
 $router->post('/staff/invitations/inspect', [AuthController::class, 'inspectInvitation']);
 $router->post('/staff/invitations/redeem', [AuthController::class, 'redeemInvitation']);

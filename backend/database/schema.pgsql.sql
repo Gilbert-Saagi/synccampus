@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     full_name VARCHAR(120) NOT NULL,
     email VARCHAR(160) NOT NULL UNIQUE,
-    password_hash VARCHAR(300) NOT NULL,
+    password_hash VARCHAR(300) NOT NULL,             -- unused: everyone signs in with an emailed link
     role VARCHAR(20) NOT NULL,                       -- admin | president | vice_guild | delegate
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
@@ -230,9 +230,10 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 CREATE INDEX IF NOT EXISTS ix_sessions_user ON sessions (user_id);
 
-CREATE TABLE IF NOT EXISTS admin_login_requests (
+CREATE TABLE IF NOT EXISTS login_links (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id),
+    portal VARCHAR(10) NOT NULL,
     token_hash VARCHAR(64) NOT NULL UNIQUE,
     device_hash VARCHAR(64) NOT NULL,
     device_label VARCHAR(200) NOT NULL DEFAULT '',

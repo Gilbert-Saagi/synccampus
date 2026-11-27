@@ -1,7 +1,8 @@
 // Guild workspace: projects and tasks, public updates, surveys, suggestions, trends and staff chat.
 // Leaders (President / Vice) manage everything; delegates see projects, update their own tasks and chat.
 
-const token = sessionStorage.getItem("saagi_token");
+let token = null;
+try { token = localStorage.getItem("saagi_token_staff"); } catch {}
 const call = (path, options = {}) => api(path, { ...options, token });
 const TASK_STATES = { open: "Open", in_progress: "In progress", completed: "Completed" };
 const SUGGESTION_STATES = ["new", "reviewing", "accepted", "declined", "implemented"];

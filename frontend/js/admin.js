@@ -28,9 +28,9 @@ function suggestFor(position) {
 
 const same = (a, b) => (a || "").trim().toLowerCase() === (b || "").trim().toLowerCase();
 
-const portal = initPortal({
+initPortal({
+  portal: "admin",
   home: "/admin/",
-  passwordLogin: false,
   render: async (account) => {
     if (account.role !== "admin") {
       wrongPortal("This page is only for the system administrator. Guild cabinet members sign in on the staff page.", "/staff/", "Go to the staff page");
@@ -40,72 +40,17 @@ const portal = initPortal({
   },
 });
 
-/* ---------- sign-in with an emailed link, bound to this device ---------- */
-
-// A random key that stays in this browser. The emailed link only works when the
-// same key is sent back, so a forwarded or intercepted link is useless elsewhere.
-function deviceKey() {
-  const KEY = "saagi_admin_device";
-  let value = localStorage.getItem(KEY);
-  if (!value) {
-    const bytes = crypto.getRandomValues(new Uint8Array(32));
-    value = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
-    localStorage.setItem(KEY, value);
-  }
-  return value;
-}
-
-$("#adminLinkForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  $("#loginErr").textContent = "";
-  const button = e.target.querySelector("button");
-  button.disabled = true;
-  try {
-    const result = await api("/auth/admin-link", { method: "POST", body: { email: new FormData(e.target).get("email"), device: deviceKey() } });
-    e.target.classList.add("hide");
-    $("#linkSent").innerHTML = `<div class="notice"><b>Check your email.</b> ${esc(result.message)}
-        ${result.dev_link ? `<p class="small">Development server – no email is sent. <a class="more" href="${esc(result.dev_link)}">Open the sign-in link</a></p>` : ""}
-        <p><button class="btn sm alt" id="again" type="button">Use a different address</button></p></div>`;
-    $("#again").onclick = () => {
-      $("#linkSent").innerHTML = "";
-      e.target.classList.remove("hide");
-    };
-  } catch (error) {
-    $("#loginErr").textContent = error.message;
-  } finally {
-    button.disabled = false;
-  }
-});
-
-async function confirmLink(linkToken) {
-  history.replaceState(null, "", location.pathname);
-  $("#adminLinkForm").classList.add("hide");
-  $("#linkSent").innerHTML = '<p class="muted">Signing you in…</p>';
-  try {
-    const session = await api("/auth/admin-link/confirm", { method: "POST", body: { token: linkToken, device: deviceKey() } });
-    $("#linkSent").innerHTML = "";
-    portal.signIn(session.access_token);
-  } catch (error) {
-    $("#linkSent").innerHTML = `<p class="err">${esc(error.message)}</p>`;
-    $("#adminLinkForm").classList.remove("hide");
-  }
-}
-
-const linkToken = new URLSearchParams(location.hash.slice(1)).get("login");
-if (linkToken) confirmLink(linkToken);
-
 async function adminView() {
   const [staff, invitations, cabinet] = await Promise.all([call("/admin/staff"), call("/admin/invitations"), loadCabinet().catch(() => [])]);
 
   $("#app").innerHTML = `
     <div class="card"><h1>Administration</h1>
-      <p class="sub">Create and look after the Guild cabinet's accounts. Each person gets a one-use sign-up link, sets their own password,
-      then signs in at <b>${esc(location.origin)}/staff/</b>. For student privacy, the admin account cannot open concerns.</p></div>
+      <p class="sub">Create and look after the Guild cabinet's accounts. Each person gets a one-use sign-up link, then signs in at <b>${esc(location.origin)}/staff/</b> with a link emailed to them. For student privacy, the admin account cannot open concerns.</p></div>
     ${cabinetCard(cabinet, staff, invitations)}
     ${invitePanel({ title: "Create an invitation", intro: "Use “Prepare invite” above, or fill this in for anyone not on the list. " })}
     ${staffCard(staff)}
     ${invitationsCard(invitations)}
-    ${accountCard({ password: false })}`;
+    ${accountCard()}`;
 
   bindInviteForm(() => setTimeout(adminView, 4000));
   bindAccountCard();

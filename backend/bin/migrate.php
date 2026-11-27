@@ -60,7 +60,7 @@ if ($existing === null) {
         'full_name' => 'System administrator',
         'email' => $email,
         // Never used: admin password sign-in is switched off.
-        'password_hash' => Auth::hashPassword(bin2hex(random_bytes(32))),
+        'password_hash' => Auth::unusablePassword(),
         'role' => 'admin',
         'is_active' => true,
         'created_at' => Time::now(),

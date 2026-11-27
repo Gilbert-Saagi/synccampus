@@ -19,13 +19,13 @@
 <main>
   <section id="loginBox" class="card narrow">
     <h2>Staff sign in</h2>
-    <p class="sub">For the Guild cabinet: the President, Vice, Speaker, ministers and GRCs. New members receive a one-use sign-up link from the system admin.</p>
-    <form id="loginForm">
-      <label>Email</label><input name="email" type="email" required autocomplete="username">
-      <label>Password</label><input name="password" type="password" required autocomplete="current-password">
-      <button class="btn" type="submit">Sign in</button>
+    <p class="sub">For the Guild cabinet: the President, Vice, Speaker, ministers and GRCs. Enter your email and open the link we send <b>on this device</b>, within 15 minutes. New members first receive a sign-up link from the system admin.</p>
+    <form id="linkForm">
+      <label>Your email</label><input name="email" type="email" required autocomplete="username">
+      <button class="btn" type="submit">Email me a sign-in link</button>
       <div class="err" id="loginErr"></div>
     </form>
+    <div id="linkSent"></div>
     <p class="muted small">Students do not need an account. <a class="more" href="/">Go to the student site</a></p>
   </section>
   <section id="invitationBox" class="card narrow hide"></section>

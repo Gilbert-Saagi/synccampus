@@ -16,11 +16,13 @@ Live site: https://synccampus-frontend.vercel.app
 | Who | Address | How they get in |
 | --- | --- | --- |
 | Students | `/` (the public site) | No account. They submit a concern and track it with the reference and private access code they are given. |
-| Guild cabinet (President, Vice, Speaker, ministers, GRCs) | `/staff/` | Their own email and password, after a one-use sign-up link from the system admin. Each person can see and sign out their own devices. |
-| System admin | `/admin/` | No password. They enter the admin email, get a one-time link by email, and must open it in the same browser on the same device that asked for it. Each signed-in device can be signed out from the admin page. |
+| Guild cabinet (President, Vice, Speaker, ministers, GRCs) | `/staff/` | No password. After a one-use sign-up link from the system admin, they sign in by entering their email and opening the link sent to it on the same device. |
+| System admin | `/admin/` | Same as the cabinet, but only the admin's address gets a link here. |
+
+Sign-in links expire after 15 minutes, work once, and only work in the browser on the device that asked for them, so a forwarded or intercepted link is useless. Every account lists its signed-in devices and can sign any of them out.
 
 The public site never links to `/staff/` or `/admin/`, and search engines are told not to index them.
-Signing in at the wrong one shows a pointer to the right one. Asking for an admin link with any other address does nothing (the page answers the same way, so it can't be used to discover the admin's address), and the cabinet list, invitations and account controls exist only behind the admin sign-in.
+Signing in at the wrong one shows a pointer to the right one. Asking for a link with an address that has no account does nothing (the page answers the same way, so it can't be used to discover the admin's address), and the cabinet list, invitations and account controls exist only behind the admin sign-in.
 
 The public pages also show the Guild cabinet alongside the content. On the submit page, that panel shows who usually handles the chosen kind of concern.
 
@@ -83,9 +85,10 @@ tuned against case-study data without touching the logic.
    C:\xampp\php\php.exe -S localhost:8000 backend\dev-router.php
    ```
 
-4. Open http://localhost:8000. The staff dashboard is at http://localhost:8000/staff/. Sign in as
-   `president@demo.local`, `nakato@demo.local` (a minister), `ssemanda@demo.local` (a City Campus GRC) or `admin@demo.local`, all with the
-   password `Demo-password-2026`.
+4. Open http://localhost:8000. Cabinet members sign in at http://localhost:8000/staff/ as
+   `president@demo.local`, `nakato@demo.local` (a minister) or `ssemanda@demo.local` (a City Campus
+   GRC); the admin at http://localhost:8000/admin/ as `admin@demo.local`. With no email service
+   configured, the development server shows the sign-in link on screen instead of emailing it.
 
 `seed-demo.php` adds a small cabinet and a few sample concerns so every screen has data. It refuses
 to run when `APP_ENV=production`.

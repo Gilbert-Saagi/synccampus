@@ -6,6 +6,7 @@
 let workload = [];
 
 initPortal({
+  portal: "staff",
   home: "/staff/",
   render: async (account) => {
     if (account.role === "admin") {

@@ -4,7 +4,8 @@ declare(strict_types=1);
 namespace SyncCampus;
 
 /**
- * Staff authentication. Every sign-in creates a row in `sessions` (one per
+ * Staff authentication. People sign in with an emailed, device-bound link
+ * (see AuthController). Every sign-in creates a row in `sessions` (one per
  * device) and a signed HS256 token that names it, so any device can be
  * signed out from another one. Students never sign in; they use a reference
  * and access code instead (see Codes).
@@ -20,28 +21,10 @@ final class Auth
 
     private static ?array $user = null;
 
-    public static function hashPassword(string $password): string
+    /** Filler for the password column: nobody signs in with a password. */
+    public static function unusablePassword(): string
     {
-        return password_hash($password, PASSWORD_DEFAULT);
-    }
-
-    public static function verifyPassword(string $password, string $stored): bool
-    {
-        // Accounts created by the first (Python) version of the system used
-        // "pbkdf2$<salt hex>$<hash hex>". They are re-hashed on their next login.
-        if (str_starts_with($stored, 'pbkdf2$')) {
-            $parts = explode('$', $stored);
-            if (count($parts) !== 3 || ($salt = hex2bin($parts[1])) === false) {
-                return false;
-            }
-            return hash_equals($parts[2], hash_pbkdf2('sha256', $password, $salt, 200000, 64));
-        }
-        return password_verify($password, $stored);
-    }
-
-    public static function needsRehash(string $stored): bool
-    {
-        return str_starts_with($stored, 'pbkdf2$') || password_needs_rehash($stored, PASSWORD_DEFAULT);
+        return password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT);
     }
 
     /** Signs a user in on this device and returns the response body the frontend expects. */

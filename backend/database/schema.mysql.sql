@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     full_name VARCHAR(120) NOT NULL,
     email VARCHAR(160) NOT NULL UNIQUE,
-    password_hash VARCHAR(300) NOT NULL,
+    password_hash VARCHAR(300) NOT NULL,             -- unused: everyone signs in with an emailed link
     role VARCHAR(20) NOT NULL,                       -- admin | president | vice_guild | delegate
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -251,9 +251,10 @@ CREATE TABLE IF NOT EXISTS sessions (
     FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS admin_login_requests (
+CREATE TABLE IF NOT EXISTS login_links (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
+    portal VARCHAR(10) NOT NULL,                     -- admin | staff
     token_hash VARCHAR(64) NOT NULL UNIQUE,
     device_hash VARCHAR(64) NOT NULL,                -- the link only works in the browser that asked for it
     device_label VARCHAR(200) NOT NULL DEFAULT '',
