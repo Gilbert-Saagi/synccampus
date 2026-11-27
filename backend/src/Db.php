@@ -22,11 +22,18 @@ final class Db
     {
         if (self::$pdo === null) {
             [$dsn, $user, $pass] = self::settings();
-            self::$pdo = new PDO($dsn, $user, $pass, [
+            $options = [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
-            ]);
+            ];
+            if (str_starts_with($dsn, 'pgsql:')) {
+                // Connection poolers such as Neon's lose track of named server-side prepared
+                // statements inside a transaction. Unnamed statements avoid that; values are
+                // still sent separately from the SQL, so nothing is spliced into queries.
+                $options[PDO::PGSQL_ATTR_DISABLE_PREPARES] = true;
+            }
+            self::$pdo = new PDO($dsn, $user, $pass, $options);
             self::$pdo->exec(self::isPostgres() ? "SET TIME ZONE 'UTC'" : "SET time_zone = '+00:00'");
         }
         return self::$pdo;
