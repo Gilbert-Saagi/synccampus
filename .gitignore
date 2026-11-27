@@ -13,3 +13,5 @@ Thumbs.db
 
 # Personal documents kept next to the code
 *.docx
+*.pdf
+*.doc
