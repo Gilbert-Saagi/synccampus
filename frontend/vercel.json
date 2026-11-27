@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://synccampus-api.onrender.com/api/:path*"
+      "destination": "https://synccampus-42qx.onrender.com/api/:path*"
     }
   ],
   "redirects": [

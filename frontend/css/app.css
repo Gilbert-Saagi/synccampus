@@ -123,3 +123,5 @@ header.top.admin{background:var(--slate)}
 @media(max-width:900px){.layout{grid-template-columns:1fr}.side{position:static;margin-top:0;margin-bottom:20px}.side-list{max-height:none}}
 .link-device{margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
 .device .btn{margin-left:6px}
+#accountSwitch{width:auto;max-width:260px;padding:6px 8px;font-size:13px;background:var(--navy2);color:#fff;border-color:rgba(255,255,255,.3)}
+#savedAccounts{margin-top:14px}

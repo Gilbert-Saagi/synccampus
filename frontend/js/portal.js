@@ -28,11 +28,21 @@ const store = {
 /**
  * Wires up the page. `portal` is "staff" or "admin"; `render(me)` draws the
  * signed-in view; `home` is where sign-out returns to.
+ *
+ * Several accounts can be signed in on one device (handy for testing and
+ * presenting: President, Vice and a delegate side by side). Each keeps its own
+ * session; the bar at the top switches between them. The active account's
+ * token is also kept under saagi_token_<portal>, which the workspace page reads.
  */
 function initPortal({ portal, home, render }) {
   portalName = portal;
   tokenKey = "saagi_token_" + portal;
+  const accountsKey = "saagi_accounts_" + portal;
   token = store.get(tokenKey);
+
+  const accounts = () => { try { return JSON.parse(store.get(accountsKey)) || []; } catch { return []; } };
+  const saveAccounts = (list) => store.set(accountsKey, JSON.stringify(list));
+  const forget = (oldToken) => saveAccounts(accounts().filter((a) => a.token !== oldToken));
 
   $("#loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -40,6 +50,7 @@ function initPortal({ portal, home, render }) {
     const f = new FormData(e.target);
     try {
       const session = await api("/auth/login", { method: "POST", form: { portal, username: f.get("email"), password: f.get("password") } });
+      e.target.reset();
       signIn(session.access_token);
     } catch (error) {
       $("#loginErr").textContent = error.message;
@@ -51,25 +62,55 @@ function initPortal({ portal, home, render }) {
     useCode(new FormData(e.target).get("code"));
   });
 
+  // Signs out the account in use only; any other account on this device takes over.
   $("#logout").onclick = async () => {
     await call("/auth/logout", { method: "POST" }).catch(() => {});
+    forget(token);
+    const next = accounts()[0];
+    if (next) return switchTo(next.token);
     store.remove(tokenKey);
     location.replace(home);
   };
+
+  function showLogin({ adding = false } = {}) {
+    $("#app").classList.add("hide");
+    $("#invitationBox")?.classList.add("hide");
+    $("#loginBox").classList.remove("hide");
+    const others = accounts();
+    $("#savedAccounts").innerHTML = others.length
+      ? `<p class="muted small">${adding ? "Add another account, or go back to" : "Signed in on this device:"}</p>
+         <div class="actions">${others.map((a) => `<button class="btn sm alt" type="button" data-use="${esc(a.token)}">${esc(a.name)} · ${esc(ROLE_LABELS[a.role] || a.role)}</button>`).join("")}</div>`
+      : "";
+    $$("#savedAccounts [data-use]").forEach((b) => (b.onclick = () => switchTo(b.dataset.use)));
+  }
+
+  function renderSwitcher() {
+    const list = accounts();
+    $("#who").innerHTML = `<select id="accountSwitch" aria-label="Signed-in account">
+        ${list.map((a) => `<option value="${esc(a.token)}"${a.token === token ? " selected" : ""}>${esc(a.name)} · ${esc(ROLE_LABELS[a.role] || a.role)}</option>`).join("")}
+        <option value="__add">+ Add another account</option>
+      </select>`;
+    $("#who").classList.remove("hide");
+    $("#accountSwitch").onchange = (e) => (e.target.value === "__add" ? showLogin({ adding: true }) : switchTo(e.target.value));
+  }
 
   async function start() {
     try {
       me = await call("/auth/me");
     } catch {
+      // Signed out from another device, or expired: drop it and fall back to another account.
+      forget(token);
       store.remove(tokenKey);
       token = null;
-      return;
+      const next = accounts()[0];
+      if (next) return switchTo(next.token);
+      return showLogin();
     }
+    saveAccounts([{ token, name: me.name, role: me.role, email: me.email }, ...accounts().filter((a) => a.token !== token && a.email !== me.email)]);
     $("#loginBox").classList.add("hide");
     $("#invitationBox")?.classList.add("hide");
     $("#app").classList.remove("hide");
-    $("#who").textContent = `${me.name} · ${ROLE_LABELS[me.role] || me.role}`;
-    $("#who").classList.remove("hide");
+    renderSwitcher();
     $("#logout").classList.remove("hide");
     try {
       await render(me);
@@ -78,11 +119,14 @@ function initPortal({ portal, home, render }) {
     }
   }
 
-  function signIn(newToken) {
+  function switchTo(newToken) {
     token = newToken;
     store.set(tokenKey, token);
+    $("#app").innerHTML = "";
     start();
   }
+
+  const signIn = switchTo;
 
   async function useCode(code) {
     $("#codeErr").textContent = "";
@@ -103,6 +147,8 @@ function initPortal({ portal, home, render }) {
     showInvitation(signIn);
   } else if (token) {
     start();
+  } else {
+    showLogin();
   }
 }
 
