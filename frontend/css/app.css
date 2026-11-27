@@ -125,3 +125,134 @@ header.top.admin{background:var(--slate)}
 .device .btn{margin-left:6px}
 #accountSwitch{width:auto;max-width:260px;padding:6px 8px;font-size:13px;background:var(--navy2);color:#fff;border-color:rgba(255,255,255,.3)}
 #savedAccounts{margin-top:14px}
+
+/* ---------- Guild workspace: app layout ---------- */
+.ws-body{background:#F6F3F1}
+.ws-body>#workspaceLogin{margin-top:60px}
+.ws-app{display:grid;grid-template-columns:236px minmax(0,1fr);min-height:100vh}
+.ws-side{background:var(--navy);color:#fff;display:flex;flex-direction:column;padding:18px 12px;position:sticky;top:0;height:100vh}
+.ws-brand{display:flex;gap:10px;align-items:center;color:#fff;text-decoration:none;padding:0 8px 18px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:12px}
+.ws-brand img{width:38px;height:38px;border-radius:50%;background:#fff;border:2px solid var(--amber)}
+.ws-brand b{display:block}.ws-brand small{color:var(--ice);font-size:11px}
+#wsNav{display:flex;flex-direction:column;gap:2px}
+#wsNav a{display:flex;align-items:center;gap:10px;color:#F4D7DB;text-decoration:none;padding:9px 12px;border-radius:9px;font-size:14px}
+#wsNav a:hover{background:rgba(255,255,255,.08)}
+#wsNav a.active{background:#fff;color:var(--navy);font-weight:600}
+.ws-icon{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ws-side-foot{margin-top:auto;display:flex;flex-direction:column;gap:6px;padding:12px 8px 0;border-top:1px solid rgba(255,255,255,.15)}
+.ws-side-foot a{color:#F4D7DB;font-size:12.5px;text-decoration:none}
+.ws-main{padding:22px 28px 40px;min-width:0}
+.ws-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.ws-top h1{color:var(--navy);font-size:24px}.ws-top p{margin-top:2px}
+.ws-top-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.ws-actions{display:flex;gap:8px;flex-wrap:wrap}
+.ws-user{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--navy)}
+.ws-avatar{width:34px;height:34px;border-radius:50%;background:var(--navy2);color:#fff;display:inline-grid;place-items:center;font-size:12px;font-weight:700;flex:none}
+.ws-avatar.sm{width:26px;height:26px;font-size:10px;vertical-align:middle}
+
+/* tiles */
+.ws-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:16px}
+.ws-tile{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;text-decoration:none;color:var(--slate);box-shadow:0 1px 2px rgba(68,54,58,.05)}
+.ws-tile:hover{border-color:var(--navy2)}
+.ws-tile-icon{width:42px;height:42px;border-radius:11px;background:var(--ice);color:var(--navy);display:grid;place-items:center}
+.ws-tile-icon .ws-icon{width:21px;height:21px}
+.ws-tile small{display:block;color:var(--mute);font-size:12px}.ws-tile b{font-size:24px;color:var(--navy);line-height:1.1}
+
+/* cards */
+.ws-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:16px;align-items:start}
+.ws-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 1px 2px rgba(68,54,58,.05);min-width:0}
+.ws-grid>.ws-card{margin-bottom:0}
+.ws-card h2{color:var(--navy);font-size:16px;margin-bottom:2px}
+.ws-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.ws-card summary{cursor:pointer;color:var(--slate);font-size:14px}
+.ws-empty{text-align:center;padding:40px 18px}.ws-empty p{margin-bottom:12px;color:var(--mute)}
+
+/* chips */
+.ws-chip{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 9px;border-radius:999px;background:#F1ECEC;color:var(--slate);border-left:3px solid #C9BFC0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.ws-chip-event{border-left-color:#257de0;background:#EAF2FC}
+.ws-chip-deadline{border-left-color:#f47230;background:#FDEFE7}
+.ws-chip-announcement,.ws-chip-media{border-left-color:#00b894;background:#E5F7F2}
+.ws-chip-live{border-left-color:var(--green);background:#E7F4EC;color:#24603A}
+.ws-legend-row{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 12px}
+
+/* charts */
+.ws-donut{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.ws-donut svg{width:150px;height:150px;flex:none}
+.ws-donut circle:hover{opacity:.8}
+.ws-donut-total{font-size:26px;font-weight:700;fill:var(--slate)}.ws-donut-label{font-size:11px;fill:var(--mute)}
+.ws-legend{list-style:none;display:grid;gap:8px;min-width:150px}
+.ws-legend li{display:grid;grid-template-columns:12px 1fr auto;gap:8px;align-items:center;font-size:13px}
+.ws-legend i{width:12px;height:12px;border-radius:3px}
+.ws-columns{display:flex;align-items:flex-end;gap:12px;height:190px;padding-top:6px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.ws-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.ws-col b{font-size:12px;color:var(--slate)}
+.ws-col-bar{width:100%;max-width:42px;background:#257de0;border-radius:4px 4px 0 0}
+.ws-col:hover .ws-col-bar{background:#1b67bd}
+.ws-col small{color:var(--mute);font-size:11.5px;margin-bottom:-22px;height:18px}
+.ws-hbars{display:grid;gap:9px}
+.ws-hbar{display:grid;grid-template-columns:minmax(80px,140px) 1fr 34px;gap:10px;align-items:center;font-size:13px}
+.ws-hbar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ws-hbar-track{height:12px;background:#F1ECEC;border-radius:4px;overflow:hidden}
+.ws-hbar-track i{display:block;height:100%;background:#257de0;border-radius:0 4px 4px 0}
+.ws-hbar b{text-align:right}
+.ws-progress{height:8px;background:#F1ECEC;border-radius:4px;overflow:hidden;margin:6px 0 3px}
+.ws-progress i{display:block;height:100%;background:#00b894;border-radius:0 4px 4px 0}
+.ws-progress.high i{background:#f47230}
+.ws-progress-cell{min-width:150px}
+
+/* lists */
+.ws-activity{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid #F3ECEC}
+.ws-activity:last-of-type{border-bottom:0}
+.ws-activity small{display:block}
+.ws-date{background:var(--ice);color:var(--navy);border-radius:9px;text-align:center;padding:4px 0;line-height:1.1}
+.ws-date b{display:block;font-size:17px}.ws-date small{font-size:10.5px;text-transform:uppercase}
+.ws-tasks{list-style:none;margin:10px 0}
+.ws-task{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-left:4px solid #257de0;border-radius:9px;margin-bottom:6px}
+.ws-task-in_progress{border-left-color:#f47230}.ws-task-completed{border-left-color:#00b894;opacity:.75}
+.ws-task small{display:block}.ws-task select{width:auto;padding:5px 8px;font-size:12.5px}
+.ws-inline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ws-inline input,.ws-inline select{width:auto;flex:1 1 140px;padding:8px 10px}
+.ws-inline .btn{margin-top:0}
+
+/* calendar */
+.ws-cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ws-cal-head{background:#F8F4F3;padding:8px;font-size:12px;color:var(--mute);text-align:center;border-bottom:1px solid var(--line)}
+.ws-day{min-height:96px;padding:6px;border-right:1px solid #F1ECEC;border-bottom:1px solid #F1ECEC;display:flex;flex-direction:column;gap:3px;min-width:0}
+.ws-day:nth-child(7n){border-right:0}
+.ws-day.other{background:#FBF9F8;color:#B8ACAE}
+.ws-day.today .ws-day-n{background:var(--navy);color:#fff;border-radius:50%;width:24px;height:24px;display:grid;place-items:center}
+.ws-day-n{font-size:12.5px;font-weight:600}
+.ws-day .ws-chip{font-size:10.5px;padding:1px 6px}
+
+/* chat */
+.ws-chat{display:flex;flex-direction:column;height:calc(100vh - 170px);min-height:360px}
+.ws-messages{flex:1;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:4px 4px 12px}
+.ws-msg{max-width:70%;background:#F4EFEE;border-radius:12px 12px 12px 3px;padding:8px 12px}
+.ws-msg.mine{align-self:flex-end;background:var(--navy);color:#fff;border-radius:12px 12px 3px 12px}
+.ws-msg small{opacity:.75;font-size:11px}.ws-msg p{margin-top:2px;white-space:pre-line}
+
+/* dialogs */
+.ws-dialog{margin:auto;border:0;border-radius:16px;padding:0;width:min(620px,94vw);box-shadow:0 20px 50px rgba(30,15,20,.3)}
+.ws-dialog::backdrop{background:rgba(40,20,25,.45)}
+.ws-dialog form{padding:20px 22px}
+.ws-dialog-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.ws-dialog-head h2{color:var(--navy);font-size:18px}
+.ws-close{background:none;border:0;font-size:26px;line-height:1;cursor:pointer;color:var(--mute)}
+#wsInviteLink{margin:8px 0}
+
+@media(max-width:900px){
+  .ws-app{grid-template-columns:minmax(0,1fr)}
+  .ws-side{position:static;height:auto;padding:10px}
+  .ws-brand{border:0;padding-bottom:8px;margin-bottom:4px}
+  #wsNav{flex-direction:row;overflow-x:auto;gap:4px}
+  #wsNav a{white-space:nowrap;padding:8px 10px}
+  .ws-side-foot{flex-direction:row;gap:14px;border:0;padding-top:8px}
+  .ws-main{padding:16px}
+  .ws-tiles{grid-template-columns:1fr 1fr;gap:10px}
+  .ws-tile{padding:12px;gap:10px}.ws-tile-icon{width:34px;height:34px}.ws-tile b{font-size:20px}
+  .ws-grid{grid-template-columns:minmax(0,1fr)}
+  .ws-top-right{width:100%;justify-content:space-between}
+  .ws-day{min-height:64px}
+  .ws-day .ws-chip{font-size:0;padding:0;width:8px;height:8px;border:0;background:#f47230}
+  .ws-msg{max-width:88%}
+}

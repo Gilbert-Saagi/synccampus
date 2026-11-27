@@ -71,6 +71,8 @@ $router->get('/leader/escalations', [LeaderController::class, 'escalations']);
 $router->post('/leader/run-escalation', [LeaderController::class, 'runEscalation']);
 $router->post('/leader/escalations/{id}/acknowledge', [LeaderController::class, 'acknowledge']);
 $router->get('/leader/performance', [LeaderController::class, 'performance']);
+$router->get('/leader/invitations', [LeaderController::class, 'invitations']);
+$router->post('/leader/invitations/{id}/revoke', [LeaderController::class, 'revokeInvitation']);
 $router->get('/leader/handover', [LeaderController::class, 'handovers']);
 $router->post('/leader/handover', [LeaderController::class, 'createHandover']);
 $router->get('/leader/surveys', [WorkspaceController::class, 'surveys']);

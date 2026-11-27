@@ -66,20 +66,6 @@ final class Rules
         'Low' => ['reminder' => 84, 'escalate' => 168],
     ];
 
-    /*
-     * Q9–Q14 – how long the manual process took before the system, used on the
-     * leader dashboard to compare "before" with what the system measures now.
-     * Hours are the midpoint of the most common answer band.
-     */
-    public const BASELINE = [
-        'identify_hrs' => ['label' => '6–24 hours', 'hours' => 15],
-        'assign_hrs' => ['label' => '1–2 days', 'hours' => 36],
-        'first_response_hrs' => ['label' => '1–2 days', 'hours' => 36],
-        'resolution_hrs' => ['label' => '1–2 weeks', 'hours' => 252],
-        'resolution_rate' => ['label' => '25–50%', 'percent' => 38],
-        'satisfaction' => ['label' => 'Dissatisfied', 'score' => 2],
-    ];
-
     /** Weights derived from PRIORITY_RANKING. */
     public static function priorityWeights(): array
     {

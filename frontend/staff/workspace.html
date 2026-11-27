@@ -4,23 +4,31 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Guild workspace – Saagi SyncCampus</title><meta name="theme-color" content="#7A1426">
 <link rel="manifest" href="/manifest.json"><link rel="icon" href="/assets/icons/icon.svg"><link rel="stylesheet" href="/css/app.css">
-</head><body>
-<header class="top">
-  <a class="brand" href="/staff/"><span class="logo"><img src="/assets/logo.png" alt="ISBAT University"></span>
-    <span><b>Saagi SyncCampus</b><small>Guild workspace</small></span></a>
-  <nav>
-    <a href="/staff/">Dashboard</a>
-    <a href="/staff/workspace.html" class="active">Guild workspace</a>
-    <a href="/community.html">Student updates page</a>
-  </nav>
-</header>
-<main>
-  <section id="workspaceLogin" class="card narrow">
-    <h2>Guild workspace</h2>
-    <p class="sub">Sign in on the staff dashboard first, then come back here.</p>
-    <a class="btn" href="/staff/">Staff sign in</a>
-  </section>
-  <div id="workspace" class="hide"></div>
-</main>
+</head><body class="ws-body">
+<section id="workspaceLogin" class="card narrow">
+  <h2>Guild workspace</h2>
+  <p class="sub">Sign in on the staff dashboard first, then come back here.</p>
+  <a class="btn" href="/staff/">Staff sign in</a>
+</section>
+
+<div id="workspace" class="ws-app hide">
+  <aside class="ws-side">
+    <a class="ws-brand" href="/staff/workspace.html"><img src="/assets/logo.png" alt=""><span><b>SyncCampus</b><small>Guild workspace</small></span></a>
+    <nav id="wsNav" aria-label="Workspace sections"></nav>
+    <div class="ws-side-foot">
+      <a href="/staff/">← Concern dashboard</a>
+      <a href="/community.html">Student updates page</a>
+    </div>
+  </aside>
+  <div class="ws-main">
+    <header class="ws-top">
+      <div><h1 id="wsTitle">Overview</h1><p id="wsSub" class="muted"></p></div>
+      <div class="ws-top-right"><div id="wsActions" class="ws-actions"></div><span id="wsUser" class="ws-user"></span></div>
+    </header>
+    <div id="wsView"></div>
+  </div>
+</div>
+
+<dialog id="wsDialog" class="ws-dialog"></dialog>
 <script src="/js/common.js"></script><script src="/js/workspace.js"></script>
 </body></html>

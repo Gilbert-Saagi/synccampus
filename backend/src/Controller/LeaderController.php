@@ -6,7 +6,6 @@ namespace SyncCampus\Controller;
 use SyncCampus\Auth;
 use SyncCampus\Db;
 use SyncCampus\Engine\Analytics;
-use SyncCampus\Engine\Rules;
 use SyncCampus\HttpError;
 use SyncCampus\Request;
 use SyncCampus\Service\Concerns;
@@ -86,8 +85,41 @@ final class LeaderController
     {
         Auth::requireRole($request, Auth::LEADERS);
         Concerns::runEscalationChecksIfDue();
-        // The questionnaire baseline travels with the live figures so the dashboard can compare them.
-        return Analytics::summarise(Concerns::where()) + ['baseline' => Rules::BASELINE];
+        return Analytics::summarise(Concerns::where());
+    }
+
+    /** Delegate invitations, for the Team view of the Guild workspace. */
+    public function invitations(Request $request): array
+    {
+        Auth::requireRole($request, Auth::LEADERS);
+        $rows = Db::all(
+            "SELECT i.id, i.invitee_name, i.invitee_email, i.portfolio, i.created_at, i.expires_at,
+                    i.redeemed_at, i.revoked_at, u.full_name AS created_by
+               FROM staff_invitations i JOIN users u ON u.id = i.created_by
+              WHERE i.role = 'delegate' ORDER BY i.id DESC LIMIT 50"
+        );
+        return array_map(static fn ($i) => [
+            'id' => (int) $i['id'],
+            'invitee_name' => $i['invitee_name'],
+            'invitee_email' => $i['invitee_email'],
+            'portfolio' => $i['portfolio'],
+            'created_by' => $i['created_by'],
+            'created_at' => Time::iso($i['created_at']),
+            'expires_at' => Time::iso($i['expires_at']),
+            'status' => $i['redeemed_at'] ? 'used' : ($i['revoked_at'] ? 'cancelled'
+                : (strtotime($i['expires_at'] . ' UTC') <= time() ? 'expired' : 'pending')),
+        ], $rows);
+    }
+
+    public function revokeInvitation(Request $request): array
+    {
+        $user = Auth::requireRole($request, Auth::LEADERS);
+        Db::run(
+            "UPDATE staff_invitations SET revoked_at = ? WHERE id = ? AND role = 'delegate' AND redeemed_at IS NULL AND revoked_at IS NULL",
+            [Time::now(), $request->id()]
+        );
+        Auth::audit($user['id'], 'revoke_invitation', 'staff_invitation', $request->id());
+        return ['ok' => true];
     }
 
     public function performance(Request $request): array

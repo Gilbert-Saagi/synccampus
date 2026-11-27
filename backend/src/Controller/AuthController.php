@@ -34,9 +34,11 @@ final class AuthController
         'staff' => Auth::STAFF,
     ];
 
-    // Only the system admin creates cabinet accounts.
+    // The admin sets up the whole cabinet; the Guild President and Vice invite their delegates.
     private const CAN_INVITE = [
         'admin' => ['president', 'vice_guild', 'delegate'],
+        'president' => ['delegate'],
+        'vice_guild' => ['delegate'],
     ];
 
     public function login(Request $request): array

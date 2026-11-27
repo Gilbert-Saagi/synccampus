@@ -23,8 +23,8 @@ anonymous students, `delegate`, `president` / `vice_guild` and `admin` accounts.
 
 ## Section C – Baseline timelines (Q9–Q14)
 
-The most common answers are stored as `Rules::BASELINE` and shown on the leader dashboard in a
-**Before and after** table next to the figures the system measures:
+These questions give the "before" picture for the project report. The system measures the same
+things from its own records, so the two can be compared in the evaluation chapter:
 
 | Q | Measure | Measured by the system as |
 | --- | --- | --- |

@@ -39,7 +39,6 @@ async function leaderView() {
       <div class="kpi"><small>Student satisfaction</small><div class="v">${stats.avg_satisfaction == null ? "–" : stats.avg_satisfaction + "/5"}</div></div>
     </div>
 
-    ${baselineCard(stats)}
 
     <div class="card"><h2>Priority queue</h2><p class="sub">Open concerns, highest score first. The system recommends a delegate; you make the final call.</p>
       <div class="tablewrap"><table>
@@ -162,23 +161,6 @@ function handoverSummary(record) {
   const s = record.snapshot;
   return `<details class="upd"><summary><b>${esc(record.term)}</b> · ${fmtDate(record.generated_at)} · ${s.count} open concern(s), ${s.active_projects.length} project(s)</summary>
     ${handoverTable(s)}</details>`;
-}
-
-// Q9–Q14: what the questionnaire said the manual process took, next to what the system measures now.
-function baselineCard(stats) {
-  const b = stats.baseline;
-  const hours = (v) => (v == null ? "no data yet" : fmtAge(v));
-  const rows = [
-    ["Finding the right person", b.identify_hrs.label, "instant (recommended on arrival)"],
-    ["Assigning the concern", b.assign_hrs.label, hours(stats.avg_assign_hrs)],
-    ["First response to the student", b.first_response_hrs.label, hours(stats.avg_first_response_hrs)],
-    ["Full resolution", b.resolution_hrs.label, hours(stats.avg_resolution_hrs)],
-    ["Concerns resolved", b.resolution_rate.label, stats.resolution_rate + "%"],
-    ["Satisfaction", b.satisfaction.label, stats.avg_satisfaction == null ? "no ratings yet" : stats.avg_satisfaction + " / 5 (" + stats.ratings_count + " ratings)"],
-  ];
-  return `<div class="card"><h2>Before and after</h2><p class="sub">Baseline from the requirements questionnaire compared with what SyncCampus has recorded.</p>
-    <div class="tablewrap"><table><thead><tr><th>Measure</th><th>Before (questionnaire)</th><th>Now (measured)</th></tr></thead>
-    <tbody>${rows.map(([m, before, now]) => `<tr><td>${m}</td><td>${esc(before)}</td><td><b>${esc(now)}</b></td></tr>`).join("")}</tbody></table></div></div>`;
 }
 
 function performanceCard(rows) {

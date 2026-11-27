@@ -68,7 +68,7 @@ tuned against case-study data without touching the logic.
 | Related concerns | TF-IDF vectors and cosine similarity over title and description, with stop words, light stemming and a small synonym list ("wifi" and "internet" both become "network"). Matching concerns in the same category from the last 30 days are grouped, and the group size feeds back into the priority score. |
 | Delegate recommendation | Area match (45%), spare capacity (25%), experience with the category (15%) and campus (15%). Delegates who are away or at full load are skipped. Overrides are recorded. |
 | Escalation | A reminder halfway, then an escalation, once a concern passes its limit: Critical 6 hours, High 24 hours, Medium 3 days, Low 1 week. The student is told about the delay, and the President acknowledges the escalation. |
-| Analytics | Time to assign, first response and resolution, resolution and reopen rates, student satisfaction, per-delegate performance, trends by month and campus, plus a before-and-after comparison with the questionnaire baseline. |
+| Analytics | Time to assign, first response and resolution, resolution and reopen rates, student satisfaction, per-delegate performance, trends by month and campus. |
 | Handover | A saved record of open concerns, projects and pending tasks, resolved history, delegate roles, performance and upcoming meetings, readable by the incoming cabinet. |
 
 [docs/requirements.md](docs/requirements.md) maps every questionnaire question to the feature that answers it.
