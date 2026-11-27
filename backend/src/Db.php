@@ -116,9 +116,18 @@ final class Db
             case 'postgres':
             case 'postgresql':
                 $dsn = sprintf('pgsql:host=%s;port=%d;dbname=%s', $parts['host'], $parts['port'] ?? 5432, $name);
-                // Pass through libpq options such as sslmode=require and channel_binding.
-                foreach ($options as $key => $value) {
-                    $dsn .= ";$key='" . addcslashes((string) $value, "'\\") . "'";
+                // Pass on the options that matter (Neon needs sslmode=require). Others, such as
+                // channel_binding, are skipped: older client libraries reject them outright.
+                // Neon routes by endpoint ID. Older client libraries (e.g. XAMPP's) cannot send it
+                // through TLS SNI, so name it explicitly. It must match what newer libraries send by
+                // SNI, i.e. the first part of the host name ("ep-abc-123-pooler.region..." -> "ep-abc-123-pooler").
+                if (!isset($options['options']) && str_ends_with($parts['host'], '.neon.tech')) {
+                    $options['options'] = 'endpoint=' . explode('.', $parts['host'])[0];
+                }
+                foreach (['sslmode', 'options', 'connect_timeout'] as $key) {
+                    if (isset($options[$key])) {
+                        $dsn .= ";$key='" . addcslashes((string) $options[$key], "'\\") . "'";
+                    }
                 }
                 return [$dsn, $user, $pass];
             case 'mysql':
