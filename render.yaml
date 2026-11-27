@@ -19,5 +19,9 @@ services:
         sync: false
       - key: BOOTSTRAP_ADMIN_EMAIL
         sync: false
-      - key: BOOTSTRAP_ADMIN_PASSWORD
+      - key: RESEND_API_KEY
         sync: false
+      - key: MAIL_FROM
+        value: SyncCampus <onboarding@resend.dev>
+      - key: APP_URL
+        value: https://synccampus-frontend.vercel.app

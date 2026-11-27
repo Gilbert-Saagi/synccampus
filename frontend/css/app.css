@@ -106,3 +106,18 @@ h2.section{color:var(--navy);font-size:18px;margin:8px 0 10px}
 textarea+.btn,textarea+.row{margin-top:8px}
 .cal-day{margin-bottom:10px}
 header.top.admin{background:var(--slate)}
+
+/* ---------- public pages: content with the cabinet alongside ---------- */
+.layout{max-width:1180px;margin:0 auto;padding:0 14px;display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:22px;align-items:start}
+.layout>.page{margin:20px 0;padding:0;max-width:none}
+.side{position:sticky;top:12px;margin-top:20px;display:grid;gap:12px}
+.side-box{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
+.side-box h3{margin:0 0 4px}
+#sideMatch{border-color:var(--amber);background:#FFFBF1}
+.side-list{list-style:none;margin:8px 0 10px;max-height:60vh;overflow:auto}
+.side-list li{display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid #F3ECEC}
+.side-list li:last-child{border-bottom:0}
+.side-list img,.side-av{width:38px;height:38px;border-radius:50%;object-fit:cover;object-position:center 25%;flex:none;background:var(--navy2);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700}
+.side-list b{display:block;color:var(--navy);font-size:13px}.side-list small{display:block;color:var(--mute);font-size:11.5px}
+.side-areas{color:var(--navy2)!important}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.side{position:static;margin-top:0;margin-bottom:20px}.side-list{max-height:none}}

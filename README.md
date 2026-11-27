@@ -16,11 +16,13 @@ Live site: https://synccampus-frontend.vercel.app
 | Who | Address | How they get in |
 | --- | --- | --- |
 | Students | `/` (the public site) | No account. They submit a concern and track it with the reference and private access code they are given. |
-| Guild cabinet (President, Vice, Speaker, ministers, GRCs) | `/staff/` | Their own email and password, after a one-use sign-up link from the admin or the Guild President. |
-| System admin | `/admin/` | The account created from `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD`. |
+| Guild cabinet (President, Vice, Speaker, ministers, GRCs) | `/staff/` | Their own email and password, after a one-use sign-up link from the system admin. Each person can see and sign out their own devices. |
+| System admin | `/admin/` | No password. They enter the admin email, get a one-time link by email, and must open it in the same browser on the same device that asked for it. Each signed-in device can be signed out from the admin page. |
 
 The public site never links to `/staff/` or `/admin/`, and search engines are told not to index them.
-Signing in at the wrong one shows a pointer to the right one.
+Signing in at the wrong one shows a pointer to the right one. Asking for an admin link with any other address does nothing (the page answers the same way, so it can't be used to discover the admin's address), and the cabinet list, invitations and account controls exist only behind the admin sign-in.
+
+The public pages also show the Guild cabinet alongside the content. On the submit page, that panel shows who usually handles the chosen kind of concern.
 
 ## Stack
 
@@ -105,8 +107,7 @@ This checks the priority, similarity, recommendation and escalation rules. It ne
 - Sensitive categories (harassment, discrimination) are always private and never appear in public statistics.
 - Every staff view and change is written to `audit_log`.
 
-Staff accounts are created only through one-use invitation links (admin → whole cabinet, President →
-Vice and ministers, Vice → ministers). Nobody can register without one.
+Staff accounts are created only by the system admin, through one-use invitation links. Nobody can register without one.
 
 ## Running the API in Docker
 

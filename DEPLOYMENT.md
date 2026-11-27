@@ -36,7 +36,9 @@ The code is on GitHub at `Gilbert-Saagi/synccampus`; connect that account to Ren
    | `ACCESS_CODE_PEPPER` | a long random string. **Never change it afterwards**: every student access code depends on it. If you still have the value from the old Render service, reuse it so access codes from the old database keep working; otherwise those old codes stop working (staff accounts and the concerns themselves are unaffected). |
    | `SECRET_KEY` | a different long random string |
    | `APP_ENV` | `production` |
-   | `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` | the first admin account; the password needs 12+ characters. Only used if that account does not exist yet. |
+   | `BOOTSTRAP_ADMIN_EMAIL` | the system admin's email address. The admin signs in with a link sent here, so it must be a real inbox. |
+   | `RESEND_API_KEY` | from https://resend.com (free). Sign up to Resend **with the same email as `BOOTSTRAP_ADMIN_EMAIL`**: until you verify a domain, Resend only delivers to that address. |
+   | `APP_URL` | `https://synccampus-frontend.vercel.app` (already set by `render.yaml`), used in the emailed link |
 
 3. Deploy. On every start the container runs `bin/migrate.php`, which creates any missing tables
    and the admin account, then starts Apache.
@@ -60,8 +62,10 @@ Old staff links (`/staff.html`, `/workspace.html`) redirect to the new `/staff/`
 
 ## 4. First sign-in
 
-1. Go to `https://synccampus-frontend.vercel.app/admin/` and sign in with the bootstrap admin account.
-2. Change the admin password under **My account**.
+1. Go to `https://synccampus-frontend.vercel.app/admin/`, enter the admin email and press
+   **Email me a sign-in link**. Open the emailed link on the same device and browser.
+2. Under **My account → Signed-in devices** you can see every device signed in as admin and sign
+   any of them out.
 3. In **Guild cabinet**, press **Prepare invite** next to each member, starting with the President
    and Vice. The form fills in their name, role, position, suggested categories and campus. Check
    the categories, since they drive the delegate recommendations, then create the link and send it
@@ -91,7 +95,7 @@ The whole project also runs on an ordinary Apache + PHP + MySQL host:
    `/api/*` to the PHP API and serves everything else from `frontend/`, so source files and `.env`
    are never reachable from a browser.
 3. Set the variables from `backend/.env.example` in the control panel, or create `backend/.env`.
-4. Create the admin account: set `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` and run
+4. Create the admin account: set `BOOTSTRAP_ADMIN_EMAIL`, `RESEND_API_KEY` and `APP_URL`, and run
    `php backend/bin/migrate.php` from the host's terminal or cron page.
 
 Never commit `backend/.env`, database passwords, `SECRET_KEY` or `ACCESS_CODE_PEPPER`.

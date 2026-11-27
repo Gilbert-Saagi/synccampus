@@ -239,6 +239,30 @@ CREATE TABLE IF NOT EXISTS request_throttle (
     updated_at DATETIME NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS sessions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    label VARCHAR(200) NOT NULL DEFAULT '',          -- e.g. "Chrome on Windows"
+    created_at DATETIME NOT NULL,
+    last_seen_at DATETIME NOT NULL,
+    expires_at DATETIME NOT NULL,
+    revoked_at DATETIME NULL,
+    INDEX ix_sessions_user (user_id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS admin_login_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    device_hash VARCHAR(64) NOT NULL,                -- the link only works in the browser that asked for it
+    device_label VARCHAR(200) NOT NULL DEFAULT '',
+    created_at DATETIME NOT NULL,
+    expires_at DATETIME NOT NULL,
+    used_at DATETIME NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT IGNORE INTO categories (name, base_severity, is_sensitive) VALUES
     ('Academic issues', 0.60, FALSE),
     ('Examinations', 0.80, FALSE),

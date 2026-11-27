@@ -35,6 +35,30 @@ final class StudentController
         ], Db::all('SELECT id, name, is_sensitive FROM categories ORDER BY id'));
     }
 
+    /**
+     * Cabinet members with an active account and the kinds of concern they
+     * handle, for the "who looks at this" panel. Names and areas only.
+     */
+    public function cabinet(): array
+    {
+        $rows = Db::all(
+            "SELECT u.full_name, u.role, d.portfolio, d.categories_handled, d.campus
+               FROM delegates d JOIN users u ON u.id = d.user_id
+              WHERE u.is_active = TRUE AND d.show_public = TRUE AND u.role IN ('president', 'vice_guild', 'delegate')
+              ORDER BY u.full_name"
+        );
+        return array_map(static fn ($r) => [
+            'name' => $r['full_name'],
+            'position' => $r['portfolio'],
+            'is_leader' => in_array($r['role'], ['president', 'vice_guild'], true),
+            'handles' => array_values(array_filter(
+                array_map('trim', explode(',', $r['categories_handled'])),
+                static fn ($c) => $c !== '' && strcasecmp($c, 'General') !== 0
+            )),
+            'campus' => $r['campus'],
+        ], $rows);
+    }
+
     public function submit(Request $request): Response
     {
         $in = $request->input();

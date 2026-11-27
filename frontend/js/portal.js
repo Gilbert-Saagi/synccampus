@@ -3,7 +3,7 @@
 
 const TOKEN_KEY = "saagi_token";
 const ROLE_LABELS = { admin: "System admin", president: "Guild President", vice_guild: "Guild Vice President", delegate: "Minister / GRC" };
-const INVITABLE = { admin: ["president", "vice_guild", "delegate"], president: ["vice_guild", "delegate"], vice_guild: ["delegate"] };
+const INVITABLE = { admin: ["president", "vice_guild", "delegate"] };
 const inviteToken = new URLSearchParams(location.hash.slice(1)).get("invite");
 
 let token = sessionStorage.getItem(TOKEN_KEY);
@@ -14,10 +14,11 @@ const call = (path, options = {}) => api(path, { ...options, token });
 
 /**
  * Wires up the page. `render(me)` draws the signed-in view; `home` is where
- * sign-out returns to.
+ * sign-out returns to. The admin page brings its own sign-in form, so it
+ * passes `passwordLogin: false` and calls the returned `signIn` itself.
  */
-function initPortal({ home, render }) {
-  $("#loginForm").addEventListener("submit", async (e) => {
+function initPortal({ home, render, passwordLogin = true }) {
+  if (passwordLogin) $("#loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     $("#loginErr").textContent = "";
     const f = new FormData(e.target);
@@ -29,7 +30,8 @@ function initPortal({ home, render }) {
     }
   });
 
-  $("#logout").onclick = () => {
+  $("#logout").onclick = async () => {
+    await call("/auth/logout", { method: "POST" }).catch(() => {});
     sessionStorage.removeItem(TOKEN_KEY);
     location.replace(home);
   };
@@ -62,7 +64,14 @@ function initPortal({ home, render }) {
 
   if (inviteToken && $("#invitationBox")) showInvitation(signIn);
   else if (token) start();
+  return { signIn };
 }
+
+// Pasting a sign-up or sign-in link into a tab that already shows this page only
+// changes the #fragment, which does not reload the page. Reload so the link is read.
+window.addEventListener("hashchange", () => {
+  if (/(^|[#&])(invite|login)=/.test(location.hash)) location.reload();
+});
 
 /** Shown when someone signs in at the wrong door. */
 function wrongPortal(text, href, label) {
@@ -184,7 +193,7 @@ async function showInvitation(signIn) {
   try {
     info = await api("/staff/invitations/inspect", { method: "POST", body: { token: inviteToken } });
   } catch (error) {
-    box.innerHTML = `<h2>Invitation unavailable</h2><p class="err">${esc(error.message)}</p><p class="sub">Ask the system admin or the Guild President for a new link.</p>`;
+    box.innerHTML = `<h2>Invitation unavailable</h2><p class="err">${esc(error.message)}</p><p class="sub">Ask the system admin for a new link.</p>`;
     return;
   }
 
@@ -221,30 +230,66 @@ async function showInvitation(signIn) {
 
 /* ---------- account settings ---------- */
 
-function accountCard() {
-  return `<div class="card"><h2>My account</h2>
-    <form id="passwordForm">
+function accountCard({ password = true } = {}) {
+  const passwordForm = password
+    ? `<form id="passwordForm">
       <div class="row">
         <div><label>Current password</label><input type="password" name="current_password" required autocomplete="current-password"></div>
         <div><label>New password (at least 12 characters)</label><input type="password" name="new_password" required minlength="12" maxlength="128" autocomplete="new-password"></div>
       </div>
       <button class="btn alt" type="submit">Change password</button> <span id="passwordResult"></span>
-    </form>
+      <p class="muted small">Changing your password signs you out on every other device.</p>
+    </form>`
+    : "";
+  return `<div class="card"><h2>My account</h2>
+    ${passwordForm}
+    <h3>Signed-in devices</h3>
+    <div id="devices"><p class="muted">Loading…</p></div>
     <p class="muted small">You can install SyncCampus on your phone like an app.</p>
     <button class="btn alt sm" id="installApp" type="button">Install app</button>
   </div>`;
 }
 
+async function renderDevices() {
+  const list = $("#devices");
+  if (!list) return;
+  try {
+    const sessions = await call("/auth/sessions");
+    list.innerHTML = sessions.map((s) => `<div class="upd"><b>${esc(s.label)}</b>${s.current ? ' <span class="pill good">this device</span>' : ""}<br>
+        <small>Signed in ${fmtDate(s.signed_in_at)} · last active ${fmtDate(s.last_seen_at)}</small>
+        ${s.current ? "" : ` <button class="btn sm alt" data-signout="${s.id}">Sign out</button>`}</div>`).join("")
+      + (sessions.length > 1 ? '<button class="btn sm" id="signOutOthers">Sign out all other devices</button>' : "");
+    list.querySelectorAll("[data-signout]").forEach((button) => {
+      button.onclick = async () => {
+        await call(`/auth/sessions/${button.dataset.signout}/revoke`, { method: "POST" });
+        renderDevices();
+      };
+    });
+    if ($("#signOutOthers")) {
+      $("#signOutOthers").onclick = async () => {
+        await call("/auth/sessions/revoke-others", { method: "POST" });
+        renderDevices();
+      };
+    }
+  } catch (error) {
+    list.innerHTML = `<p class="err">${esc(error.message)}</p>`;
+  }
+}
+
 function bindAccountCard() {
-  $("#passwordForm").addEventListener("submit", async (event) => {
+  renderDevices();
+  const form = $("#passwordForm");
+  if (!form) return;
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const f = new FormData(event.target);
+    const f = new FormData(form);
     const out = $("#passwordResult");
     try {
       await call("/auth/change-password", { method: "POST", body: { current_password: f.get("current_password"), new_password: f.get("new_password") } });
       out.className = "ok";
-      out.textContent = "Password changed.";
-      event.target.reset();
+      out.textContent = "Password changed. Other devices have been signed out.";
+      form.reset();
+      renderDevices();
     } catch (error) {
       out.className = "err";
       out.textContent = error.message;

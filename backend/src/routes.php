@@ -22,6 +22,7 @@ $router->post('/track/info', [StudentController::class, 'addInfo']);
 $router->post('/track/confirm', [StudentController::class, 'confirm']);
 $router->get('/public/concerns', [StudentController::class, 'publicFeed']);
 $router->get('/public/stats', [StudentController::class, 'stats']);
+$router->get('/public/cabinet', [StudentController::class, 'cabinet']);
 
 // Guild updates page (anonymous)
 $router->get('/public/workspace', [CommunityController::class, 'updates']);
@@ -34,6 +35,12 @@ $router->post('/suggestions/track/reply', [CommunityController::class, 'replyToS
 // Staff accounts
 $router->post('/auth/login', [AuthController::class, 'login']);
 $router->get('/auth/me', [AuthController::class, 'me']);
+$router->post('/auth/logout', [AuthController::class, 'logout']);
+$router->get('/auth/sessions', [AuthController::class, 'sessions']);
+$router->post('/auth/sessions/{id}/revoke', [AuthController::class, 'revokeSession']);
+$router->post('/auth/sessions/revoke-others', [AuthController::class, 'revokeOtherSessions']);
+$router->post('/auth/admin-link', [AuthController::class, 'requestAdminLink']);
+$router->post('/auth/admin-link/confirm', [AuthController::class, 'confirmAdminLink']);
 $router->post('/auth/change-password', [AuthController::class, 'changePassword']);
 $router->post('/staff/invitations', [AuthController::class, 'createInvitation']);
 $router->post('/staff/invitations/inspect', [AuthController::class, 'inspectInvitation']);

@@ -71,7 +71,6 @@ async function leaderView() {
       ${handovers.length ? `<h3>Saved records</h3>${handovers.map(handoverSummary).join("")}` : ""}
     </div>
 
-    ${invitePanel()}
     ${accountCard()}`;
 
   $$("[data-ack]").forEach((b) => (b.onclick = async () => {
@@ -91,7 +90,6 @@ async function leaderView() {
   $$("[data-accept]").forEach((b) => (b.onclick = () => assign(b.dataset.cid, b.dataset.accept)));
   $$("[data-assign]").forEach((b) => (b.onclick = () => assign(b.dataset.assign, $("#sel" + b.dataset.assign).value)));
   $$("details[data-explain]").forEach((d) => d.addEventListener("toggle", () => d.open && explain(d), { once: true }));
-  bindInviteForm();
   bindAccountCard();
 }
 

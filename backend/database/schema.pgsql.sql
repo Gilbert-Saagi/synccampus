@@ -219,6 +219,28 @@ CREATE TABLE IF NOT EXISTS request_throttle (
     updated_at TIMESTAMP NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS sessions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    label VARCHAR(200) NOT NULL DEFAULT '',
+    created_at TIMESTAMP NOT NULL,
+    last_seen_at TIMESTAMP NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    revoked_at TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS ix_sessions_user ON sessions (user_id);
+
+CREATE TABLE IF NOT EXISTS admin_login_requests (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    token_hash VARCHAR(64) NOT NULL UNIQUE,
+    device_hash VARCHAR(64) NOT NULL,
+    device_label VARCHAR(200) NOT NULL DEFAULT '',
+    created_at TIMESTAMP NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used_at TIMESTAMP
+);
+
 INSERT INTO categories (name, base_severity, is_sensitive) VALUES
     ('Academic issues', 0.60, FALSE),
     ('Examinations', 0.80, FALSE),

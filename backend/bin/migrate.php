@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 /*
  * Creates any missing tables, adds the default categories and, when
- * BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD are set, the first
- * setup administrator. Safe to run on every deploy.
+ * BOOTSTRAP_ADMIN_EMAIL is set, the system admin account. Safe to run on
+ * every deploy.
  *
  *   php bin/migrate.php
  */
@@ -49,30 +49,28 @@ foreach ($added as [$table, $column, $definition]) {
 
 echo 'Schema is up to date (' . basename($file) . ").\n";
 
+// The admin signs in with an emailed link, so only the address is needed.
 $email = strtolower(Env::get('BOOTSTRAP_ADMIN_EMAIL'));
-$password = Env::get('BOOTSTRAP_ADMIN_PASSWORD');
 if ($email === '') {
     exit(0);
 }
-if (strlen($password) < 12) {
-    fwrite(STDERR, "BOOTSTRAP_ADMIN_PASSWORD must be at least 12 characters; no admin was created.\n");
-    exit(1);
-}
-
 $existing = Db::one('SELECT id, role FROM users WHERE email = ?', [$email]);
 if ($existing === null) {
     Db::insert('users', [
-        'full_name' => 'Setup administrator',
+        'full_name' => 'System administrator',
         'email' => $email,
-        'password_hash' => Auth::hashPassword($password),
+        // Never used: admin password sign-in is switched off.
+        'password_hash' => Auth::hashPassword(bin2hex(random_bytes(32))),
         'role' => 'admin',
         'is_active' => true,
         'created_at' => Time::now(),
     ]);
-    echo "Created setup administrator $email.\n";
+    echo "Created admin account $email (signs in with an emailed link at /admin/).
+";
 } elseif ($existing['role'] !== 'admin') {
-    fwrite(STDERR, "$email already belongs to a non-admin account; leaving it unchanged.\n");
+    fwrite(STDERR, "$email already belongs to a non-admin account; leaving it unchanged.
+");
 } else {
-    // Never overwrite a password the admin has since changed in the app.
-    echo "Setup administrator $email already exists.\n";
+    echo "Admin account $email already exists.
+";
 }

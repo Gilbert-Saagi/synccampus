@@ -100,5 +100,59 @@ async function loadCabinet() {
   return res.json();
 }
 
+/* ---------- cabinet sidebar on the public pages ---------- */
+
+// Cabinet photos and positions (public list) merged with the areas each member handles
+// (from their account). Matching is by name.
+let cabinetPromise = null;
+function cabinetWithAreas() {
+  cabinetPromise ??= Promise.all([loadCabinet(), api("/public/cabinet").catch(() => [])]).then(([people, accounts]) =>
+    people.map((p) => {
+      const account = accounts.find((a) => a.name.trim().toLowerCase() === p.name.trim().toLowerCase());
+      return { ...p, handles: account ? account.handles : [], campus: account ? account.campus : "" };
+    }));
+  return cabinetPromise;
+}
+
+const sideFace = (p) => p.photo
+  ? `<img src="${esc(p.photo)}" alt="" loading="lazy">`
+  : `<span class="side-av">${esc(initials(p.name))}</span>`;
+
+async function renderSidebar() {
+  const side = $("#side");
+  if (!side) return;
+  let people;
+  try {
+    people = await cabinetWithAreas();
+  } catch {
+    side.remove();
+    return;
+  }
+  const leaders = people.filter((p) => /president/i.test(p.position));
+  const others = people.filter((p) => !/president/i.test(p.position));
+  side.innerHTML = `<div class="side-box" id="sideMatch" hidden></div>
+    <div class="side-box"><h3>Your Guild cabinet</h3>
+      <p class="muted small">The student leaders who handle concerns raised here.</p>
+      <ul class="side-list">${[...leaders, ...others].map((p) => `<li>${sideFace(p)}<span><b>${esc(p.name)}</b><small>${esc(p.position)}</small>
+        ${p.handles.length ? `<small class="side-areas">${p.handles.map(esc).join(" · ")}</small>` : ""}</span></li>`).join("")}</ul>
+      <a class="more" href="/cabinet.html">Meet the whole cabinet →</a></div>`;
+}
+
+/** On the submit page: shows who usually handles the chosen category. */
+async function showHandlers(category) {
+  const box = $("#sideMatch");
+  if (!box || !category) return;
+  const people = await cabinetWithAreas().catch(() => []);
+  const match = people.filter((p) => p.handles.some((h) => h.toLowerCase() === category.toLowerCase()));
+  box.hidden = false;
+  box.innerHTML = `<h3>Who looks at this</h3>
+    ${match.length
+      ? `<p class="muted small">Concerns about <b>${esc(category)}</b> usually go to:</p>
+         <ul class="side-list">${match.map((p) => `<li>${sideFace(p)}<span><b>${esc(p.name)}</b><small>${esc(p.position)}</small></span></li>`).join("")}</ul>
+         <p class="muted small">The Guild President confirms who takes it.</p>`
+      : `<p class="muted small">The Guild President reviews <b>${esc(category)}</b> concerns and passes them to the right cabinet member.</p>`}`;
+}
+
 if (document.body.dataset.page) renderChrome(document.body.dataset.page);
+renderSidebar();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});

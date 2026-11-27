@@ -16,6 +16,7 @@ async function loadCategories() {
 // Academic and fee categories pre-tick the matching impact box; the student can untick it.
 function syncSensitive({ presetImpact = false } = {}) {
   const category = categories.find((c) => String(c.id) === $("#category").value);
+  if (category) showHandlers(category.name);
   if (presetImpact && category) {
     $("#academicImpact").checked = category.academic;
     $("#financialImpact").checked = category.financial;
