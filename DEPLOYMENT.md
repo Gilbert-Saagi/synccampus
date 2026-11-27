@@ -36,7 +36,7 @@ The code is on GitHub at `Gilbert-Saagi/synccampus`; connect that account to Ren
    | `ACCESS_CODE_PEPPER` | a long random string. **Never change it afterwards**: every student access code depends on it. If you still have the value from the old Render service, reuse it so access codes from the old database keep working; otherwise those old codes stop working (staff accounts and the concerns themselves are unaffected). |
    | `SECRET_KEY` | a different long random string |
    | `APP_ENV` | `production` |
-   | `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` | the admin account, created on first start if it does not exist. The password needs 12+ characters; change it in the app afterwards. |
+   | `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` | the admin account, created on first start if it does not exist. The password needs 8+ characters; change it in the app afterwards. |
 
 3. Deploy. On every start the container runs `bin/migrate.php`, which creates any missing tables
    and the admin account, then starts Apache.

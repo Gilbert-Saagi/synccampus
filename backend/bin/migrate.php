@@ -55,8 +55,8 @@ $password = Env::get('BOOTSTRAP_ADMIN_PASSWORD');
 if ($email === '') {
     exit(0);
 }
-if (strlen($password) < 12) {
-    fwrite(STDERR, "BOOTSTRAP_ADMIN_PASSWORD must be at least 12 characters; no admin was created.
+if (strlen($password) < 8) {
+    fwrite(STDERR, "BOOTSTRAP_ADMIN_PASSWORD must be at least 8 characters; no admin was created.
 ");
     exit(1);
 }

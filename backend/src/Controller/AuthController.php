@@ -201,7 +201,7 @@ final class AuthController
         if (!Auth::verifyPassword((string) $in->raw('current_password'), $user['password_hash'])) {
             throw new HttpError(401, 'Current password is incorrect');
         }
-        $new = $in->text('new_password', 'The new password', 12, 128);
+        $new = $in->text('new_password', 'The new password', 8, 128);
         Db::run('UPDATE users SET password_hash = ? WHERE id = ?', [Auth::hashPassword($new), $user['id']]);
         Auth::audit($user['id'], 'change_password', 'user', $user['id']);
         return ['ok' => true];
@@ -279,7 +279,7 @@ final class AuthController
         $token = $in->text('token', 'Invitation token', 30, 200);
         $name = $in->text('full_name', 'Full name', 2, 120);
         $email = strtolower($in->text('email', 'Email', 5, 160));
-        $password = $in->text('password', 'Password', 12, 128);
+        $password = $in->text('password', 'Password', 8, 128);
         $this->assertEmail($email, 'Enter a valid email address');
 
         $user = Db::transaction(function () use ($token, $name, $email, $password) {

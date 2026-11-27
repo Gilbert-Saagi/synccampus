@@ -199,8 +199,12 @@ function invitePanel({ title = "Invite staff", intro = "" } = {}) {
         <div><label>Campus covered</label><select name="campus" id="inviteCampus"><option value="">Both campuses</option><option>Main Campus</option><option>City Campus</option></select></div>
         <div><label>Maximum open assignments</label><input name="max_open_load" type="number" min="1" max="50" value="5"></div>
       </div>
-      <label>Email (optional – only this address can use the link)</label><input name="invitee_email" type="email" maxlength="160" placeholder="name@example.com">
-      <button class="btn" type="submit">Create invitation link</button>
+      <label>Email (optional for a link – only this address can use it)</label><input name="invitee_email" id="inviteEmail" type="email" maxlength="160" placeholder="name@example.com">
+      <label>Password (optional)</label><input name="password" id="invitePassword" type="text" minlength="8" maxlength="128" autocomplete="off"
+        placeholder="Fill in to create the account now instead of a link">
+      <p class="muted small">With a password, the account is created straight away and can sign in at once – useful for testing and
+        presentations. The email does not have to be real. Leave it empty to make a sign-up link the person completes themselves.</p>
+      <button class="btn" type="submit" id="inviteSubmit">Create invitation link</button>
       <div class="err" id="inviteErr"></div>
     </form>
     <div id="inviteResult"></div>
@@ -226,11 +230,43 @@ function bindInviteForm(onCreated) {
     if (role.value === "president") portfolio.value = "Guild President";
     else if (role.value === "vice_guild") portfolio.value = "Guild Vice President";
   });
+  // A password switches the form from "make a link" to "create the account now".
+  const syncMode = () => {
+    const direct = $("#invitePassword").value !== "";
+    $("#inviteSubmit").textContent = direct ? "Create account now" : "Create invitation link";
+    $("#inviteEmail").required = direct;
+    $("#inviteName").required = direct;
+  };
+  $("#invitePassword").addEventListener("input", syncMode);
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     $("#inviteErr").textContent = "";
     const f = new FormData(form);
+    if (f.get("password")) {
+      try {
+        const account = await call("/admin/staff", { method: "POST", body: {
+          role: f.get("role"),
+          invitee_name: f.get("invitee_name"),
+          invitee_email: f.get("invitee_email"),
+          password: f.get("password"),
+          portfolio: f.get("portfolio"),
+          categories_handled: f.get("categories_handled"),
+          max_open_load: Number(f.get("max_open_load")) || 5,
+          campus: f.get("campus"),
+        } });
+        $("#inviteResult").innerHTML = `<div class="notice"><b>Account created for ${esc(f.get("invitee_name"))}.</b>
+            Sign in at <b>${esc(location.origin)}/staff/</b> with<br>
+            email <b>${esc(account.email)}</b> and password <b>${esc(f.get("password"))}</b>.
+            ${onCreated ? '<p><button class="btn sm alt" type="button" id="refreshLists">Update the lists</button></p>' : ""}</div>`;
+        form.reset();
+        syncMode();
+        if (onCreated) $("#refreshLists").onclick = () => onCreated(account, { now: true });
+      } catch (error) {
+        $("#inviteErr").textContent = error.message;
+      }
+      return;
+    }
     try {
       const invitation = await call("/staff/invitations", { method: "POST", body: {
         role: f.get("role"),
@@ -287,8 +323,8 @@ async function showInvitation(signIn) {
     <form id="registerForm">
       <label>Full name</label><input name="full_name" required minlength="2" maxlength="120" autocomplete="name" value="${esc(info.invitee_name || "")}">
       <label>Email (you will sign in with this)</label><input name="email" type="email" required maxlength="160" autocomplete="email" value="${esc(info.invitee_email || "")}"${info.invitee_email ? " readonly" : ""}>
-      <label>Password (at least 12 characters)</label><input name="password" type="password" required minlength="12" maxlength="128" autocomplete="new-password">
-      <label>Confirm password</label><input name="confirm_password" type="password" required minlength="12" maxlength="128" autocomplete="new-password">
+      <label>Password (at least 8 characters)</label><input name="password" type="password" required minlength="8" maxlength="128" autocomplete="new-password">
+      <label>Confirm password</label><input name="confirm_password" type="password" required minlength="8" maxlength="128" autocomplete="new-password">
       <p class="muted small">This device becomes your primary device. From it you can link your other gadgets without typing the password again.</p>
       <button class="btn" type="submit">Create account</button>
       <div class="err" id="registerErr"></div>
@@ -324,7 +360,7 @@ function accountCard() {
       <form id="passwordForm">
         <div class="row">
           <div><label>Current password</label><input type="password" name="current_password" required autocomplete="current-password"></div>
-          <div><label>New password (at least 12 characters)</label><input type="password" name="new_password" required minlength="12" maxlength="128" autocomplete="new-password"></div>
+          <div><label>New password (at least 8 characters)</label><input type="password" name="new_password" required minlength="8" maxlength="128" autocomplete="new-password"></div>
         </div>
         <button class="btn alt sm" type="submit">Change password</button> <span id="passwordResult"></span>
       </form>

@@ -52,7 +52,7 @@ async function adminView() {
     ${invitationsCard(invitations)}
     ${accountCard()}`;
 
-  bindInviteForm(() => setTimeout(adminView, 4000));
+  bindInviteForm((created, { now = false } = {}) => (now ? adminView() : setTimeout(adminView, 4000)));
   bindAccountCard();
 
   $$("[data-prepare]").forEach((button) => {

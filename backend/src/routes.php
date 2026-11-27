@@ -55,6 +55,7 @@ $router->post('/staff/invitations/redeem', [AuthController::class, 'redeemInvita
 
 // System admin (accounts only, never concerns)
 $router->get('/admin/staff', [AdminController::class, 'staff']);
+$router->post('/admin/staff', [AdminController::class, 'createStaff']);
 $router->patch('/admin/staff/{id}', [AdminController::class, 'updateStaff']);
 $router->get('/admin/invitations', [AdminController::class, 'invitations']);
 $router->post('/admin/invitations/{id}/revoke', [AdminController::class, 'revokeInvitation']);

@@ -7,6 +7,7 @@ use SyncCampus\Auth;
 use SyncCampus\Db;
 use SyncCampus\HttpError;
 use SyncCampus\Request;
+use SyncCampus\Response;
 use SyncCampus\Time;
 
 /**
@@ -89,6 +90,60 @@ final class AdminController
 
         Auth::audit($admin['id'], 'update_staff', 'user', (int) $user['id']);
         return ['ok' => true];
+    }
+
+    /**
+     * Creates a cabinet account straight away with a password the admin chooses,
+     * instead of sending a sign-up link. Handy for testing and demonstrations;
+     * the person can change the password after signing in.
+     */
+    public function createStaff(Request $request): Response
+    {
+        $admin = Auth::requireRole($request, ['admin']);
+        $in = $request->input();
+
+        $role = $in->choice('role', ['president', 'vice_guild', 'delegate'], null, 'Choose a role');
+        if ($role === null) {
+            throw new HttpError(422, 'Choose a role');
+        }
+        $name = $in->text('invitee_name', 'Name', 2, 120);
+        $email = strtolower($in->text('invitee_email', 'Email', 3, 160));
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new HttpError(422, 'Enter an email address (it does not have to be real)');
+        }
+        if (Db::value('SELECT id FROM users WHERE email = ?', [$email])) {
+            throw new HttpError(409, 'That email already has an account');
+        }
+        $password = $in->text('password', 'Password', 8, 128);
+        $portfolio = $in->text('portfolio', 'Portfolio', 0, 120)
+            ?: ['president' => 'Guild President', 'vice_guild' => 'Guild Vice President', 'delegate' => ''][$role];
+        if ($portfolio === '') {
+            throw new HttpError(422, 'Enter the minister portfolio or GRC area for this delegate');
+        }
+
+        $userId = Db::transaction(static function () use ($in, $role, $name, $email, $password, $portfolio) {
+            $userId = Db::insert('users', [
+                'full_name' => $name,
+                'email' => $email,
+                'password_hash' => Auth::hashPassword($password),
+                'role' => $role,
+                'is_active' => true,
+                'created_at' => Time::now(),
+            ]);
+            Db::insert('delegates', [
+                'user_id' => $userId,
+                'portfolio' => $portfolio,
+                'categories_handled' => $in->text('categories_handled', 'Categories', 0, 300),
+                'max_open_load' => $in->int('max_open_load', 'Maximum open assignments', 5, 1, 50),
+                'campus' => $in->choice('campus', self::CAMPUSES, '', 'Choose a campus'),
+                'is_available' => true,
+                'show_public' => true,
+            ]);
+            return $userId;
+        });
+        Auth::audit($admin['id'], 'create_staff_directly', 'user', $userId);
+
+        return Response::created(['id' => $userId, 'email' => $email, 'role' => $role]);
     }
 
     public function invitations(Request $request): array
