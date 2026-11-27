@@ -35,6 +35,7 @@ $staff = [
     // name, email, role, portfolio, categories handled, max load, campus ('' = all)
     ['System Admin', 'admin@demo.local', 'admin', '', '', 0, ''],
     ['Guild President', 'president@demo.local', 'president', 'Guild President', 'General', 5, ''],
+    ['Guild Vice President', 'vice@demo.local', 'vice_guild', 'Guild Vice President', 'General', 5, ''],
     ['Grace Nakato', 'nakato@demo.local', 'delegate', 'Minister of Academic Affairs', 'Academic issues,Examinations,Timetables,Registration', 6, ''],
     ['Ronald Okello', 'okello@demo.local', 'delegate', 'Minister of ICT', 'ICT / Internet', 5, 'Main Campus'],
     ['Sarah Kyomuhendo', 'kyomuhendo@demo.local', 'delegate', 'Minister of Finance', 'Tuition / fees,Administration', 5, ''],
