@@ -14,8 +14,8 @@ Render, so there is no CORS setup and no API address in the frontend code.
 ## 1. Database (Neon)
 
 You can keep the existing Neon database from the earlier version of the project. The PHP schema
-uses the same tables, so existing concerns and staff accounts carry over. Passwords are no longer
-used: existing staff simply sign in with an emailed link to the address on their account.
+uses the same tables, so existing concerns and staff accounts carry over. Passwords
+still work: existing staff sign in as before, and old-format hashes are upgraded on their next sign-in.
 
 For a fresh database, create a Neon project and copy its connection string
 (`postgres://...?sslmode=require`). Tables are created automatically when the API starts.
@@ -36,10 +36,7 @@ The code is on GitHub at `Gilbert-Saagi/synccampus`; connect that account to Ren
    | `ACCESS_CODE_PEPPER` | a long random string. **Never change it afterwards**: every student access code depends on it. If you still have the value from the old Render service, reuse it so access codes from the old database keep working; otherwise those old codes stop working (staff accounts and the concerns themselves are unaffected). |
    | `SECRET_KEY` | a different long random string |
    | `APP_ENV` | `production` |
-   | `BOOTSTRAP_ADMIN_EMAIL` | the system admin's email address. Everyone signs in with emailed links, so it must be a real inbox. |
-   | `BREVO_API_KEY` | from https://brevo.com (free, 300 emails a day): **Settings → SMTP & API → API keys**. |
-   | `MAIL_FROM` | `SyncCampus <address>`, where the address is a sender you verified in Brevo (**Senders, domains & dedicated IPs → Senders**). A Gmail address works. |
-   | `APP_URL` | `https://synccampus-frontend.vercel.app` (already set by `render.yaml`), used in the emailed link |
+   | `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` | the admin account, created on first start if it does not exist. The password needs 12+ characters; change it in the app afterwards. |
 
 3. Deploy. On every start the container runs `bin/migrate.php`, which creates any missing tables
    and the admin account, then starts Apache.
@@ -63,17 +60,19 @@ Old staff links (`/staff.html`, `/workspace.html`) redirect to the new `/staff/`
 
 ## 4. First sign-in
 
-1. Go to `https://synccampus-frontend.vercel.app/admin/`, enter the admin email and press
-   **Email me a sign-in link**. Open the emailed link on the same device and browser.
-2. Under **My account → Signed-in devices** you can see every device signed in as admin and sign
-   any of them out.
+1. Go to `https://synccampus-frontend.vercel.app/admin/` and sign in with the bootstrap email and
+   password. That device becomes the admin's primary device. Change the password under
+   **My account and devices**.
+2. To use the admin page on another gadget too, press **Link a new device** there and open the
+   link (or type the code) on the other gadget. The device list shows every connected gadget, and
+   any of them can be signed out from the primary device.
 3. In **Guild cabinet**, press **Prepare invite** next to each member, starting with the President
    and Vice. The form fills in their name, role, position, suggested categories and campus. Check
-   the categories, since they drive the delegate recommendations. Add their email so the link is
-   emailed to them, or send it with **Send on WhatsApp** or **Copy link**.
-4. Each member opens their link and confirms their name and email. From then on they sign in at
-   `https://synccampus-frontend.vercel.app/staff/` by entering that email and opening the link
-   sent to it on the same device.
+   the categories, since they drive the delegate recommendations. Then create the link and send
+   it with **Send on WhatsApp** or **Copy link**.
+4. Each member opens their link and sets their email and password, which makes that device their
+   primary device. They link their other gadgets from it, and sign in at
+   `https://synccampus-frontend.vercel.app/staff/` from then on.
 
 The public site does not link to `/staff/` or `/admin/`. Share `/staff/` with the cabinet directly
 and keep `/admin/` to yourself.
@@ -97,7 +96,7 @@ The whole project also runs on an ordinary Apache + PHP + MySQL host:
    `/api/*` to the PHP API and serves everything else from `frontend/`, so source files and `.env`
    are never reachable from a browser.
 3. Set the variables from `backend/.env.example` in the control panel, or create `backend/.env`.
-4. Create the admin account: set `BOOTSTRAP_ADMIN_EMAIL`, `BREVO_API_KEY`, `MAIL_FROM` and `APP_URL`, and run
+4. Create the admin account: set `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` and run
    `php backend/bin/migrate.php` from the host's terminal or cron page.
 
 Never commit `backend/.env`, database passwords, `SECRET_KEY` or `ACCESS_CODE_PEPPER`.

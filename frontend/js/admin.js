@@ -45,7 +45,7 @@ async function adminView() {
 
   $("#app").innerHTML = `
     <div class="card"><h1>Administration</h1>
-      <p class="sub">Create and look after the Guild cabinet's accounts. Each person gets a one-use sign-up link, then signs in at <b>${esc(location.origin)}/staff/</b> with a link emailed to them. For student privacy, the admin account cannot open concerns.</p></div>
+      <p class="sub">Create and look after the Guild cabinet's accounts. Each person gets a one-use sign-up link, sets a password and signs in at <b>${esc(location.origin)}/staff/</b>. For student privacy, the admin account cannot open concerns.</p></div>
     ${cabinetCard(cabinet, staff, invitations)}
     ${invitePanel({ title: "Create an invitation", intro: "Use “Prepare invite” above, or fill this in for anyone not on the list. " })}
     ${staffCard(staff)}

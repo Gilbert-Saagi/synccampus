@@ -6,32 +6,32 @@ namespace SyncCampus\Controller;
 use SyncCampus\Auth;
 use SyncCampus\Codes;
 use SyncCampus\Db;
-use SyncCampus\Env;
 use SyncCampus\HttpError;
-use SyncCampus\Mailer;
 use SyncCampus\Request;
 use SyncCampus\Response;
 use SyncCampus\Throttle;
 use SyncCampus\Time;
 
 /**
- * Signing in, devices and staff invitations.
+ * Signing in, linked devices and staff invitations.
  *
- * Nobody has a password. On /admin/ (system admin) and /staff/ (Guild cabinet)
- * a person enters their email and gets a one-time link, valid for 15 minutes,
- * that only works in the browser on the device that asked for it. Each sign-in
- * is a session that can be signed out from any other device. Accounts exist
- * only through one-use invitation links created by the admin.
+ * - The first device signs in with email and password at /staff/ (Guild
+ *   cabinet) or /admin/ (system admin). It becomes the account's primary device.
+ * - From the primary device a person can link another gadget: it shows a
+ *   one-time code and link, valid for 10 minutes. Opening the link (or typing
+ *   the code) on the new gadget signs it in to the same account.
+ * - The primary device lists every connected gadget and can sign any of them out.
+ * - Accounts exist only through one-use invitation links created by the admin.
  */
 final class AuthController
 {
     private const INVITE_DAYS = 7;
-    private const LINK_MINUTES = 15;
+    private const LINK_MINUTES = 10;
 
     // Who may sign in through each door.
     private const PORTALS = [
-        'admin' => ['roles' => ['admin'], 'path' => '/admin/', 'name' => 'admin page'],
-        'staff' => ['roles' => Auth::STAFF, 'path' => '/staff/', 'name' => 'Guild cabinet dashboard'],
+        'admin' => ['admin'],
+        'staff' => Auth::STAFF,
     ];
 
     // Only the system admin creates cabinet accounts.
@@ -39,90 +39,96 @@ final class AuthController
         'admin' => ['president', 'vice_guild', 'delegate'],
     ];
 
-    /**
-     * Step 1: email a sign-in link. Every address gets the same reply, so the
-     * form cannot be used to find out who has an account.
-     */
-    public function requestLink(Request $request): array
+    public function login(Request $request): array
     {
         $in = $request->input();
         $portal = $in->choice('portal', array_keys(self::PORTALS), 'staff', 'Unknown sign-in page');
-        $email = strtolower($in->text('email', 'Email', 3, 160));
-        $device = $in->text('device', 'Device key', 32, 128);
-        // Checked before the address is looked up, so it reveals nothing about accounts.
-        if (Env::isProduction() && !Mailer::isConfigured()) {
-            throw new HttpError(503, 'Email is not set up on the server yet');
-        }
-        $key = 'signinlink:' . $email;
+        $email = strtolower($in->text('username', 'Email', 1, 160));
+        $password = (string) $in->raw('password');
+        $key = 'login:' . $email;
+
         Throttle::check($key);
-        Throttle::fail($key); // every request counts, so links cannot be requested in bulk
-
-        $answer = ['ok' => true, 'message' => 'If that address has an account here, a sign-in link is on its way. Open it on this device within ' . self::LINK_MINUTES . ' minutes.'];
-        $roles = self::PORTALS[$portal]['roles'];
-        $marks = implode(',', array_fill(0, count($roles), '?'));
-        $user = Db::one("SELECT * FROM users WHERE email = ? AND is_active = TRUE AND role IN ($marks)", [$email, ...$roles]);
-        if ($user === null) {
-            return $answer;
+        $user = Db::one('SELECT * FROM users WHERE email = ? AND is_active = TRUE', [$email]);
+        // Wrong door counts as wrong details, so the page reveals nothing about other accounts.
+        if ($user === null || !in_array($user['role'], self::PORTALS[$portal], true)
+            || !Auth::verifyPassword($password, $user['password_hash'])) {
+            Throttle::fail($key);
+            throw new HttpError(401, 'Incorrect email or password');
         }
+        Throttle::clear($key);
 
-        $token = Codes::invitationToken();
-        Db::insert('login_links', [
-            'user_id' => (int) $user['id'],
-            'portal' => $portal,
-            'token_hash' => hash('sha256', 'sign-in-link:' . $token),
-            'device_hash' => hash('sha256', 'device:' . $device),
-            'device_label' => Auth::deviceLabel(),
-            'created_at' => Time::now(),
-            'expires_at' => Time::now(self::LINK_MINUTES * 60),
-            'used_at' => null,
-        ]);
-
-        $link = $this->siteUrl() . self::PORTALS[$portal]['path'] . '#login=' . rawurlencode($token);
-        Mailer::send($user['email'], 'Your SyncCampus sign-in link', implode("\n", [
-            "Hello {$user['full_name']},",
-            '',
-            'Someone asked to sign in to the SyncCampus ' . self::PORTALS[$portal]['name'] . ' from ' . Auth::deviceLabel() . '.',
-            'If it was you, open this link on that same device within ' . self::LINK_MINUTES . ' minutes:',
-            '',
-            $link,
-            '',
-            'If it was not you, ignore this email. The link does nothing on any other device.',
-        ]));
-        Auth::audit((int) $user['id'], 'request_sign_in_link', 'user', (int) $user['id']);
-
-        // Local development without email: hand the link straight back.
-        if (!Mailer::isConfigured() && !Env::isProduction()) {
-            $answer['dev_link'] = $link;
+        if (Auth::needsRehash($user['password_hash'])) {
+            Db::run('UPDATE users SET password_hash = ? WHERE id = ?', [Auth::hashPassword($password), $user['id']]);
         }
-        return $answer;
+        Auth::audit((int) $user['id'], 'login', 'user', (int) $user['id']);
+        return Auth::startSession($user);
     }
 
-    /** Step 2: the link is opened. It must be the same browser that asked for it. */
-    public function confirmLink(Request $request): array
+    /** On the primary device: a one-time code to sign another gadget in. */
+    public function createDeviceLink(Request $request): Response
+    {
+        $user = Auth::user($request);
+        if (!$user['is_primary_device']) {
+            throw new HttpError(403, 'New devices can only be linked from your primary device');
+        }
+        // One live code at a time.
+        Db::run('UPDATE device_links SET used_at = ? WHERE user_id = ? AND used_at IS NULL', [Time::now(), $user['id']]);
+
+        $code = Codes::accessCode();
+        $expires = Time::now(self::LINK_MINUTES * 60);
+        Db::insert('device_links', [
+            'user_id' => $user['id'],
+            'created_by_session' => $user['session_id'],
+            'code_hash' => $this->hashLinkCode($code),
+            'created_at' => Time::now(),
+            'expires_at' => $expires,
+            'used_at' => null,
+        ]);
+        Auth::audit($user['id'], 'create_device_link', 'session', $user['session_id']);
+        return Response::created(['code' => $code, 'expires_at' => Time::iso($expires)]);
+    }
+
+    /** On the new gadget: the code (typed, or carried in the link) signs it in. */
+    public function useDeviceLink(Request $request): array
     {
         $in = $request->input();
-        $token = $in->text('token', 'Sign-in link', 30, 200);
-        $device = $in->text('device', 'Device key', 32, 128);
+        $portal = $in->choice('portal', array_keys(self::PORTALS), 'staff', 'Unknown sign-in page');
+        $code = $in->text('code', 'Link code', 4, 40);
+        // Guesses are counted per network address, so codes cannot be tried in bulk.
+        $key = 'devicelink:' . ($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? 'unknown');
 
-        return Db::transaction(function () use ($token, $device) {
-            $link = Db::one('SELECT * FROM login_links WHERE token_hash = ? FOR UPDATE', [hash('sha256', 'sign-in-link:' . $token)]);
-            if ($link === null || $link['used_at'] !== null || strtotime($link['expires_at'] . ' UTC') <= time()) {
-                throw new HttpError(404, 'This sign-in link is invalid, expired or already used. Ask for a new one.');
+        Throttle::check($key);
+        $session = Db::transaction(function () use ($code, $portal) {
+            $link = Db::one(
+                'SELECT l.*, s.revoked_at AS primary_revoked FROM device_links l
+                   JOIN sessions s ON s.id = l.created_by_session
+                  WHERE l.code_hash = ? FOR UPDATE',
+                [$this->hashLinkCode($code)]
+            );
+            $user = $link ? Db::one('SELECT * FROM users WHERE id = ? AND is_active = TRUE', [$link['user_id']]) : null;
+            $valid = $link !== null && $link['used_at'] === null && $link['primary_revoked'] === null
+                && strtotime($link['expires_at'] . ' UTC') > time()
+                && $user !== null && in_array($user['role'], self::PORTALS[$portal], true);
+            if (!$valid) {
+                return null;
             }
-            if (!hash_equals($link['device_hash'], hash('sha256', 'device:' . $device))) {
-                throw new HttpError(403, 'Open this link on the device and browser where you asked for it (' . $link['device_label'] . ').');
-            }
-            Db::run('UPDATE login_links SET used_at = ? WHERE id = ?', [Time::now(), $link['id']]);
-
-            $roles = self::PORTALS[$link['portal']]['roles'] ?? [];
-            $user = Db::one('SELECT * FROM users WHERE id = ? AND is_active = TRUE', [$link['user_id']]);
-            if ($user === null || !in_array($user['role'], $roles, true)) {
-                throw new HttpError(403, 'This account is switched off');
-            }
-            Throttle::clear('signinlink:' . $user['email']);
-            Auth::audit((int) $user['id'], 'login', 'user', (int) $user['id']);
-            return Auth::startSession($user);
+            Db::run('UPDATE device_links SET used_at = ? WHERE id = ?', [Time::now(), $link['id']]);
+            Auth::audit((int) $user['id'], 'link_device', 'user', (int) $user['id']);
+            return Auth::startSession($user, viaPassword: false);
         });
+
+        // Recorded outside the transaction, so a failed attempt is not rolled back with it.
+        if ($session === null) {
+            Throttle::fail($key);
+            throw new HttpError(404, 'That code is wrong, expired or already used. Make a new one on your primary device.');
+        }
+        Throttle::clear($key);
+        return $session;
+    }
+
+    private function hashLinkCode(string $code): string
+    {
+        return hash('sha256', 'device-link:' . strtoupper(str_replace([' ', '-'], '', trim($code))));
     }
 
     /** Devices signed in to the current account. */
@@ -130,8 +136,8 @@ final class AuthController
     {
         $user = Auth::user($request);
         $rows = Db::all(
-            'SELECT id, label, created_at, last_seen_at FROM sessions
-              WHERE user_id = ? AND revoked_at IS NULL AND expires_at > ? ORDER BY last_seen_at DESC',
+            'SELECT id, label, is_primary, created_at, last_seen_at FROM sessions
+              WHERE user_id = ? AND revoked_at IS NULL AND expires_at > ? ORDER BY is_primary DESC, last_seen_at DESC',
             [$user['id'], Time::now()]
         );
         return array_map(static fn ($s) => [
@@ -139,13 +145,18 @@ final class AuthController
             'label' => $s['label'],
             'signed_in_at' => Time::iso($s['created_at']),
             'last_seen_at' => Time::iso($s['last_seen_at']),
+            'primary' => (bool) $s['is_primary'],
             'current' => (int) $s['id'] === $user['session_id'],
         ], $rows);
     }
 
+    /** The primary device can sign out any device; a linked device only itself. */
     public function revokeSession(Request $request): array
     {
         $user = Auth::user($request);
+        if (!$user['is_primary_device'] && $request->id() !== $user['session_id']) {
+            throw new HttpError(403, 'Other devices can only be signed out from your primary device');
+        }
         Db::run('UPDATE sessions SET revoked_at = ? WHERE id = ? AND user_id = ? AND revoked_at IS NULL', [Time::now(), $request->id(), $user['id']]);
         Auth::audit($user['id'], 'sign_out_device', 'session', $request->id());
         return ['ok' => true];
@@ -154,6 +165,9 @@ final class AuthController
     public function revokeOtherSessions(Request $request): array
     {
         $user = Auth::user($request);
+        if (!$user['is_primary_device']) {
+            throw new HttpError(403, 'Other devices can only be signed out from your primary device');
+        }
         Db::run('UPDATE sessions SET revoked_at = ? WHERE user_id = ? AND id <> ? AND revoked_at IS NULL', [Time::now(), $user['id'], $user['session_id']]);
         Auth::audit($user['id'], 'sign_out_other_devices', 'session');
         return ['ok' => true];
@@ -175,8 +189,22 @@ final class AuthController
             'name' => $user['full_name'],
             'email' => $user['email'],
             'role' => $user['role'],
+            'primary_device' => $user['is_primary_device'],
             'delegate_id' => $delegateId === null ? null : (int) $delegateId,
         ];
+    }
+
+    public function changePassword(Request $request): array
+    {
+        $user = Auth::user($request);
+        $in = $request->input();
+        if (!Auth::verifyPassword((string) $in->raw('current_password'), $user['password_hash'])) {
+            throw new HttpError(401, 'Current password is incorrect');
+        }
+        $new = $in->text('new_password', 'The new password', 12, 128);
+        Db::run('UPDATE users SET password_hash = ? WHERE id = ?', [Auth::hashPassword($new), $user['id']]);
+        Auth::audit($user['id'], 'change_password', 'user', $user['id']);
+        return ['ok' => true];
     }
 
     public function createInvitation(Request $request): Response
@@ -223,26 +251,8 @@ final class AuthController
         ]);
         Auth::audit($user['id'], 'create_invitation', 'staff_invitation', $id);
 
-        // With an address and working email, the link also goes straight to the person.
-        $emailed = false;
-        if ($email !== null && Mailer::isConfigured()) {
-            $name = $in->text('invitee_name', 'Name', 0, 120);
-            Mailer::send($email, 'Your SyncCampus account for ' . $portfolio, implode("\n", [
-                'Hello' . ($name !== '' ? " $name" : '') . ',',
-                '',
-                "You have been invited to the SyncCampus Guild cabinet dashboard as $portfolio.",
-                'Open this link within ' . self::INVITE_DAYS . ' days to create your account (it works once):',
-                '',
-                $this->siteUrl() . '/staff/#invite=' . rawurlencode($token),
-                '',
-                'Afterwards you sign in at ' . $this->siteUrl() . '/staff/ with a link sent to this address.',
-            ]));
-            $emailed = true;
-        }
-
         return Response::created([
             'id' => $id,
-            'emailed' => $emailed,
             'token' => $token,
             'role' => $role,
             'portfolio' => $portfolio,
@@ -269,9 +279,10 @@ final class AuthController
         $token = $in->text('token', 'Invitation token', 30, 200);
         $name = $in->text('full_name', 'Full name', 2, 120);
         $email = strtolower($in->text('email', 'Email', 5, 160));
+        $password = $in->text('password', 'Password', 12, 128);
         $this->assertEmail($email, 'Enter a valid email address');
 
-        $user = Db::transaction(function () use ($token, $name, $email) {
+        $user = Db::transaction(function () use ($token, $name, $email, $password) {
             $invitation = $this->invitation($token, lock: true);
             if ($invitation['invitee_email'] && !hash_equals($invitation['invitee_email'], $email)) {
                 throw new HttpError(403, 'This invitation was issued for a different email address');
@@ -283,7 +294,7 @@ final class AuthController
             $userId = Db::insert('users', [
                 'full_name' => $name,
                 'email' => $email,
-                'password_hash' => Auth::unusablePassword(),
+                'password_hash' => Auth::hashPassword($password),
                 'role' => $invitation['role'],
                 'is_active' => true,
                 'created_at' => Time::now(),
@@ -318,19 +329,6 @@ final class AuthController
             throw new HttpError(404, 'This invitation is invalid, expired, or already used. Ask the system admin for a new link.');
         }
         return $invitation;
-    }
-
-    /** APP_URL, or else the address the browser used (behind Vercel it arrives as X-Forwarded-Host). */
-    private function siteUrl(): string
-    {
-        $configured = Env::get('APP_URL');
-        if ($configured !== '') {
-            return rtrim($configured, '/');
-        }
-        $host = $_SERVER['HTTP_X_FORWARDED_HOST'] ?? $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $host = explode(',', $host)[0];
-        $scheme = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http');
-        return explode(',', $scheme)[0] . '://' . trim($host);
     }
 
     private function assertEmail(string $email, string $message): void

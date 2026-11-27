@@ -19,13 +19,22 @@
 <main>
   <section id="loginBox" class="card narrow">
     <h2>Staff sign in</h2>
-    <p class="sub">For the Guild cabinet: the President, Vice, Speaker, ministers and GRCs. Enter your email and open the link we send <b>on this device</b>, within 15 minutes. New members first receive a sign-up link from the system admin.</p>
-    <form id="linkForm">
-      <label>Your email</label><input name="email" type="email" required autocomplete="username">
-      <button class="btn" type="submit">Email me a sign-in link</button>
+    <p class="sub">For the Guild cabinet: the President, Vice, Speaker, ministers and GRCs. New members first get a sign-up link from the system admin.</p>
+    <form id="loginForm">
+      <label>Email</label><input name="email" type="email" required autocomplete="username">
+      <label>Password</label><input name="password" type="password" required autocomplete="current-password">
+      <button class="btn" type="submit">Sign in</button>
       <div class="err" id="loginErr"></div>
     </form>
-    <div id="linkSent"></div>
+    <details class="link-device"><summary>Link this device with a code</summary>
+      <p class="muted small">Already signed in on your primary phone or computer? There, open <b>My account and devices → Link a new device</b>
+        and enter the code it shows here, or just open the link it gives you on this device.</p>
+      <form id="codeForm">
+        <label>Code</label><input name="code" required autocomplete="off" placeholder="XXXX-XXXX-XXXX">
+        <button class="btn alt" type="submit">Link this device</button>
+        <div class="err" id="codeErr"></div>
+      </form>
+    </details>
     <p class="muted small">Students do not need an account. <a class="more" href="/">Go to the student site</a></p>
   </section>
   <section id="invitationBox" class="card narrow hide"></section>

@@ -16,13 +16,13 @@ Live site: https://synccampus-frontend.vercel.app
 | Who | Address | How they get in |
 | --- | --- | --- |
 | Students | `/` (the public site) | No account. They submit a concern and track it with the reference and private access code they are given. |
-| Guild cabinet (President, Vice, Speaker, ministers, GRCs) | `/staff/` | No password. After a one-use sign-up link from the system admin, they sign in by entering their email and opening the link sent to it on the same device. |
-| System admin | `/admin/` | Same as the cabinet, but only the admin's address gets a link here. |
+| Guild cabinet (President, Vice, Speaker, ministers, GRCs) | `/staff/` | Email and password, after a one-use sign-up link from the system admin. Further gadgets are linked from their primary device. |
+| System admin | `/admin/` | Email and password from `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD`, then linked devices the same way. |
 
-Sign-in links expire after 15 minutes, work once, and only work in the browser on the device that asked for them, so a forwarded or intercepted link is useless. Every account lists its signed-in devices and can sign any of them out.
+**Linked devices.** The first device a person signs in on with their password is their primary device. On it, **My account and devices → Link a new device** shows a one-time code and link, valid for 10 minutes. Opening the link on another phone or computer, or typing the code under “Link this device” on its sign-in page, signs that gadget in to the same account without the password. The primary device shows how many devices are connected, lists them, and can sign any of them out; a linked device can only sign itself out. Codes can only be made by someone already signed in, and wrong codes are throttled.
 
 The public site never links to `/staff/` or `/admin/`, and search engines are told not to index them.
-Signing in at the wrong one shows a pointer to the right one. Asking for a link with an address that has no account does nothing (the page answers the same way, so it can't be used to discover the admin's address), and the cabinet list, invitations and account controls exist only behind the admin sign-in.
+Signing in at the wrong one fails like a wrong password, so neither page reveals who has an account, and the cabinet list, invitations and account controls exist only behind the admin sign-in.
 
 The public pages also show the Guild cabinet alongside the content. On the submit page, that panel shows who usually handles the chosen kind of concern.
 
@@ -87,8 +87,8 @@ tuned against case-study data without touching the logic.
 
 4. Open http://localhost:8000. Cabinet members sign in at http://localhost:8000/staff/ as
    `president@demo.local`, `nakato@demo.local` (a minister) or `ssemanda@demo.local` (a City Campus
-   GRC); the admin at http://localhost:8000/admin/ as `admin@demo.local`. With no email service
-   configured, the development server shows the sign-in link on screen instead of emailing it.
+   GRC); the admin at http://localhost:8000/admin/ as `admin@demo.local`. Every demo account uses the
+   password `Demo-password-2026`.
 
 `seed-demo.php` adds a small cabinet and a few sample concerns so every screen has data. It refuses
 to run when `APP_ENV=production`.

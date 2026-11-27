@@ -8,8 +8,7 @@ declare(strict_types=1);
  *
  *   php bin/seed-demo.php
  *
- * Sign in at /staff/ or /admin/ with any demo address; without email set up,
- * the development server shows the sign-in link on screen.
+ * All demo accounts use the password: Demo-password-2026
  */
 
 use SyncCampus\Auth;
@@ -30,6 +29,8 @@ if (Db::value("SELECT COUNT(*) FROM users WHERE email LIKE '%@demo.local'") > 0)
     exit(0);
 }
 
+const DEMO_PASSWORD = 'Demo-password-2026';
+
 $staff = [
     // name, email, role, portfolio, categories handled, max load, campus ('' = all)
     ['System Admin', 'admin@demo.local', 'admin', '', '', 0, ''],
@@ -46,7 +47,7 @@ foreach ($staff as [$name, $email, $role, $portfolio, $areas, $load, $campus]) {
     $userId = Db::insert('users', [
         'full_name' => $name,
         'email' => $email,
-        'password_hash' => Auth::unusablePassword(),
+        'password_hash' => Auth::hashPassword(DEMO_PASSWORD),
         'role' => $role,
         'is_active' => true,
         'created_at' => Time::now(),
@@ -99,4 +100,5 @@ $fired = Concerns::runEscalationChecks();
 
 echo "Demo data loaded: " . count($staff) . " staff accounts, " . count($concerns) . " concerns, "
     . count($fired) . " reminders/escalations.\n";
-echo "Sign in at /staff/ as president@demo.local (or any demo account), or at /admin/ as admin@demo.local.\n";
+echo "Sign in at /staff/ as president@demo.local (or any demo account), or at /admin/ as admin@demo.local,\n";
+echo "with the password " . DEMO_PASSWORD . "\n";
