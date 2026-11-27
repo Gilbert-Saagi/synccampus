@@ -13,6 +13,13 @@ use SyncCampus\Router;
 $router = new Router();
 
 $router->get('/health', static fn () => ['status' => 'ok']);
+// Opening the API's own address in a browser shows what it is instead of "Not Found".
+$router->get('/', static fn () => [
+    'service' => 'Saagi SyncCampus API',
+    'status' => 'ok',
+    'website' => 'https://synccampus-frontend.vercel.app',
+    'health' => '/api/health',
+]);
 
 // Students (anonymous)
 $router->get('/categories', [StudentController::class, 'categories']);
